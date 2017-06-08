@@ -589,6 +589,8 @@ namespace GEDmill.HTMLClasses
               }
 
               LogFile.TheLogFile.WriteLine( LogFile.DT_HTML, LogFile.EDebugLevel.Note, String.Format("Copying \"{0}\" to \"{1}\"",sFullFilename, sAbsCopyFilename ) );
+                if (!File.Exists(sFullFilename))
+                    return ""; 
               File.Copy( sFullFilename, sAbsCopyFilename, true );
               File.SetAttributes( sFullFilename, System.IO.FileAttributes.Normal ); // Make any Read-Only files read-write.
               if( uMaxWidth != 0 && uMaxHeight != 0 )

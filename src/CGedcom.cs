@@ -28,6 +28,11 @@ using System.Collections;
 using GEDmill.LLClasses;
 using System.Threading;
 
+// ReSharper disable LoopCanBeConvertedToQuery
+// ReSharper disable InconsistentNaming
+// ReSharper disable SpecifyACultureInStringConversionExplicitly
+
+
 namespace GEDmill
 {
     // The character set that the incoming GEDCOM file may use
@@ -209,13 +214,13 @@ namespace GEDmill
                     switch( m_ecCharset )
                     {
                         case ECharset.Unicode:
-                            srCharsetDetection = new StreamReader( fsCharsetDetection, System.Text.Encoding.GetEncoding("UTF-16BE") );
+                            srCharsetDetection = new StreamReader( fsCharsetDetection, Encoding.GetEncoding("UTF-16BE") );
                             break;
                         case ECharset.UnicodeReversed:
-                            srCharsetDetection = new StreamReader( fsCharsetDetection, System.Text.Encoding.GetEncoding("UTF-16LE") );
+                            srCharsetDetection = new StreamReader( fsCharsetDetection, Encoding.GetEncoding("UTF-16LE") );
                             break;
                         default:
-                            srCharsetDetection = new StreamReader( fsCharsetDetection, System.Text.Encoding.GetEncoding("utf-8") );
+                            srCharsetDetection = new StreamReader( fsCharsetDetection, Encoding.GetEncoding("utf-8") );
                             break;
                     }
                     if( srCharsetDetection != null )
@@ -276,7 +281,7 @@ namespace GEDmill
                 }
                 catch( Exception e )
                 {
-                    LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "Caught exception while trying to discern character set :" + e.ToString() );
+                    LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "Caught exception while trying to discern character set :" + e );
                     m_ecCharset = ECharset.UTF8;
                 }
 
@@ -289,32 +294,32 @@ namespace GEDmill
                     fsCharsetDetection.Close();
                 }
 
-                LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "Opening file with charset " + m_ecCharset.ToString() );
+                LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "Opening file with charset " + m_ecCharset );
                 fileStream = new FileStream( Filename, FileMode.Open, FileAccess.Read );
 
-                System.Text.Encoding encoding = System.Text.Encoding.GetEncoding("iso-8859-1");
+                Encoding encoding = Encoding.GetEncoding("iso-8859-1");
                 switch( m_ecCharset )
                 {
                     case ECharset.Ascii:
-                        encoding = System.Text.Encoding.GetEncoding("ascii");
+                        encoding = Encoding.GetEncoding("ascii");
                         break;
                     case ECharset.Ansi:
-                        encoding = System.Text.Encoding.GetEncoding("iso-8859-1");
+                        encoding = Encoding.GetEncoding("iso-8859-1");
                         break;
                     case ECharset.Ansel:
-                        encoding = System.Text.Encoding.GetEncoding("iso-8859-1");
+                        encoding = Encoding.GetEncoding("iso-8859-1");
                         break;
                     case ECharset.UTF8:
-                        encoding = System.Text.Encoding.GetEncoding("utf-8");
+                        encoding = Encoding.GetEncoding("utf-8");
                         break;
                     case ECharset.Unicode:
-                        encoding = System.Text.Encoding.GetEncoding("UTF-16BE");
+                        encoding = Encoding.GetEncoding("UTF-16BE");
                         break;
                     case ECharset.UnicodeReversed:
-                        encoding = System.Text.Encoding.GetEncoding("UTF-16LE");
+                        encoding = Encoding.GetEncoding("UTF-16LE");
                         break;
                     default:
-                        encoding = System.Text.Encoding.GetEncoding("utf-8");
+                        encoding = Encoding.GetEncoding("utf-8");
                         break;
                 }
 
@@ -400,7 +405,7 @@ namespace GEDmill
 
                 m_progressWindow.SetText( String.Format( "Parsing file line: {0} out of {1}", m_nLineIndex, nLines ) );
 
-                nPercentComplete = (int)(m_nLineIndex * 100 / nLines);
+                nPercentComplete = m_nLineIndex * 100 / nLines;
                 if( nPercentComplete > 100 )
                 {
                     // Safety valve. Prevents control from throwing.
@@ -419,7 +424,7 @@ namespace GEDmill
                     throw new CParsingException( "Header missing or corrupt" );
                 }
                 m_progressWindow.SetText( String.Format( "Parsing file line: {0} out of {1}", m_nLineIndex, nLines ) );
-                nPercentComplete = (int)(m_nLineIndex * 100 / nLines);
+                nPercentComplete = m_nLineIndex * 100 / nLines;
                 if( nPercentComplete > 100 )
                 {
                     // Safety valve. Prevents control from throwing.
@@ -434,7 +439,7 @@ namespace GEDmill
 
                 m_submissionRecord = CSubmissionRecord.Parse( this, 0 );
                 m_progressWindow.SetText( String.Format( "Parsing file line: {0} out of {1}", m_nLineIndex, nLines ) );
-                nPercentComplete = (int)(m_nLineIndex * 100 / nLines);
+                nPercentComplete = m_nLineIndex * 100 / nLines;
                 if( nPercentComplete > 100 )
                 {
                     // Safety valve. Prevents control from throwing.
@@ -451,15 +456,11 @@ namespace GEDmill
 
                 int nRecords = 0;
 
-                CFamilyRecord fr;
-                CIndividualRecord ir;
                 CMultimediaRecord mr;
                 CNoteRecord nr;
                 CRepositoryRecord rr;
                 CSourceRecord sr;
                 CSubmitterRecord smr;
-
-                CGedcomLine gedcomLine2;
 
                 bool bParsingSuccessful = false;
                 bool bParsingFinished;
@@ -467,7 +468,7 @@ namespace GEDmill
                 {
                     bParsingFinished = false;
                     m_progressWindow.SetText( String.Format( "Parsing file line: {0} out of {1}", m_nLineIndex, nLines ) );
-                    nPercentComplete = (int)(m_nLineIndex * 100 / nLines);
+                    nPercentComplete = m_nLineIndex * 100 / nLines;
                     if( nPercentComplete > 100 )
                     {
                         // Safety valve. Prevents control from throwing.
@@ -480,6 +481,7 @@ namespace GEDmill
                         return;
                     }
 
+                    CFamilyRecord fr;
                     if( (fr = CFamilyRecord.Parse( this, 0 )) != null )
                     {
                         m_alFamilyRecords.Add( fr );
@@ -487,55 +489,59 @@ namespace GEDmill
                         ++nRecords;
                         bParsingFinished = false;
                     }
-                    else if( (ir = CIndividualRecord.Parse( this, 0)) != null )
-                    {
-                        m_alIndividualRecords.Add( ir );
-                        m_htIndividualRecordsXref.Add( ir.m_xref, ir );
-                        ++nRecords;
-                        bParsingFinished = false;
-                    }
-                    else if( (mr = CMultimediaRecord.Parse( this, 0 )) != null )
-                    {
-                        m_alMultimediaRecords.Add( mr );
-                        ++nRecords;
-                        bParsingFinished = false;
-                    }
-                    else if( (nr = CNoteRecord.Parse( this, 0 )) != null )
-                    {
-                        m_alNoteRecords.Add( nr );
-                        ++nRecords;
-                        bParsingFinished = false;
-                    }
-                    else if( (rr = CRepositoryRecord.Parse( this, 0 )) != null )
-                    {
-                        m_alRepositoryRecords.Add( rr );
-                        ++nRecords;
-                        bParsingFinished = false;
-                    }
-                    else if( (sr = CSourceRecord.Parse( this, 0 )) != null )
-                    {
-                        m_alSourceRecords.Add( sr );
-                        m_htSourceRecordsXref.Add( sr.m_xref, sr );
-                        ++nRecords;
-                        bParsingFinished = false;
-                    }
-                    else if( ( smr = CSubmitterRecord.Parse( this, 0 )) != null )
-                    {
-                        m_alSubmitterRecords.Add( smr );
-                        ++nRecords;
-                        bParsingFinished = false;
-                    }
-                    else if( ( gedcomLine2 = GetLine( 0, "TRLR" )) != null )
-                    {
-                        LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "TRLR found OK" );
-                        bParsingSuccessful = true;
-                    }
                     else
                     {
-                        // Skip this unknown gedcomLine
-                        LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Warning, "WARNING: Couldn't parse line:" ); 
-                        LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Warning, GetLine().ToString() );
-                        m_nLineIndex++;
+                        CIndividualRecord ir;
+                        if( (ir = CIndividualRecord.Parse( this, 0)) != null )
+                        {
+                            IndividualRecords.Add( ir );
+                            m_htIndividualRecordsXref.Add( ir.m_xref, ir );
+                            ++nRecords;
+                            bParsingFinished = false;
+                        }
+                        else if( (mr = CMultimediaRecord.Parse( this, 0 )) != null )
+                        {
+                            m_alMultimediaRecords.Add( mr );
+                            ++nRecords;
+                            bParsingFinished = false;
+                        }
+                        else if( (nr = CNoteRecord.Parse( this, 0 )) != null )
+                        {
+                            m_alNoteRecords.Add( nr );
+                            ++nRecords;
+                            bParsingFinished = false;
+                        }
+                        else if( (rr = CRepositoryRecord.Parse( this, 0 )) != null )
+                        {
+                            m_alRepositoryRecords.Add( rr );
+                            ++nRecords;
+                            bParsingFinished = false;
+                        }
+                        else if( (sr = CSourceRecord.Parse( this, 0 )) != null )
+                        {
+                            SourceRecords.Add( sr );
+                            m_htSourceRecordsXref.Add( sr.m_xref, sr );
+                            ++nRecords;
+                            bParsingFinished = false;
+                        }
+                        else if( ( smr = CSubmitterRecord.Parse( this, 0 )) != null )
+                        {
+                            m_alSubmitterRecords.Add( smr );
+                            ++nRecords;
+                            bParsingFinished = false;
+                        }
+                        else if( ( GetLine( 0, "TRLR" )) != null )
+                        {
+                            LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "TRLR found OK" );
+                            bParsingSuccessful = true;
+                        }
+                        else
+                        {
+                            // Skip this unknown gedcomLine
+                            LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Warning, "WARNING: Couldn't parse line:" ); 
+                            LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Warning, GetLine().ToString() );
+                            m_nLineIndex++;
+                        }
                     }
                 } // end do
                 while( m_nLineIndex < nLines && !bParsingSuccessful && !bParsingFinished );
@@ -699,19 +705,19 @@ namespace GEDmill
                 // Ended normally
                 threaderror.m_nError = 0; 
             }
-            catch( System.Threading.ThreadAbortException e )
+            catch( ThreadAbortException e )
             {   
                 // Abnormal abort
                 threaderror.m_nError = 2; 
                 threaderror.m_sMessage = "";
-                LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Error, String.Format("Caught thread exception : {0}", e.ToString() ) );
+                LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Error, String.Format("Caught thread exception : {0}", e ) );
             }
-            catch( System.Threading.ThreadInterruptedException e )
+            catch( ThreadInterruptedException e )
             {
                 // Abnormal abort
                 threaderror.m_nError = 2; 
                 threaderror.m_sMessage = "";
-                LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Error, String.Format( "Caught thread exception : {0}", e.ToString() ) );
+                LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Error, String.Format( "Caught thread exception : {0}", e ) );
             }
             catch( CParsingException e )
             {
@@ -727,27 +733,27 @@ namespace GEDmill
                     }
                     else
                     {
-                        sLine = ((CGedcomLine)(m_alLines[m_nLineIndex])).ToString();
+                        sLine = m_alLines[m_nLineIndex].ToString();
                     }
                 }
 
-                LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Error, String.Format("Caught parsing exception in file {0}, line {1} ({2}) : {3}", Filename, m_nLineIndex, sLine, e.ToString() ) );
+                LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Error, String.Format("Caught parsing exception in file {0}, line {1} ({2}) : {3}", Filename, m_nLineIndex, sLine, e ) );
 
                 // And here, if we can
             }
-            catch( System.IO.IOException e )
+            catch( IOException e )
             {
                 // Abnormal abort, offer retry, file already open.
                 threaderror.m_nError = 3; 
                 threaderror.m_sMessage = "";
-                LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Error, String.Format("Caught IO exception (line index={0}) : {1}", m_nLineIndex, e.ToString() ) ); 
+                LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Error, String.Format("Caught IO exception (line index={0}) : {1}", m_nLineIndex, e ) ); 
             }
             catch( Exception e )
             {
                 // Abnormal abort
                 threaderror.m_nError = 2; 
                 threaderror.m_sMessage = "";
-                LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Error, String.Format("Caught generic exception (line index={0}) : {1}", m_nLineIndex, e.ToString() ) ); 
+                LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Error, String.Format("Caught generic exception (line index={0}) : {1}", m_nLineIndex, e ) ); 
             }
             finally
             {
@@ -817,7 +823,7 @@ namespace GEDmill
                                         }
                                         catch( IOException e )
                                         {
-                                            LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Error, "Caught IO exception during concatenation:\r\n" + e.ToString() );
+                                            LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Error, "Caught IO exception during concatenation:\r\n" + e );
                                             break;
                                         }
                                     }
@@ -877,7 +883,7 @@ namespace GEDmill
                     sLineItem = ParseLineItem( ref sLine );
                     if( DataMayEndWithWhitespace == false )
                     {
-                        CGedcom.StripTrailingWhitespace( ref sLineItem );
+                        StripTrailingWhitespace( ref sLineItem );
                     }
                 }
         
@@ -921,7 +927,6 @@ namespace GEDmill
 
             // String was all whitespace
             sText = null;
-            return;
         }
 
         // Converts a GEDCOM number string to an integer
@@ -983,11 +988,11 @@ namespace GEDmill
                 throw new CParsingException( "No level number found" );
             }
 
-            int nLevel = -1;
+            int nLevel;
 
             try 
             {
-                nLevel = System.Int32.Parse( sText.Substring( 0, i ) );
+                nLevel = Int32.Parse( sText.Substring( 0, i ) );
                 sText = sText.Substring( i );
             }
             catch( FormatException )
@@ -1086,8 +1091,8 @@ namespace GEDmill
 
             int nEscapeState = 0;
 
-            System.Text.StringBuilder sbConvertedText = new System.Text.StringBuilder( sText.Length );
-            System.Text.StringBuilder sbEscapeString = null;
+            StringBuilder sbConvertedText = new StringBuilder( sText.Length );
+            StringBuilder sbEscapeString = null;
 
             foreach( char c in sText )
             {
@@ -1100,7 +1105,7 @@ namespace GEDmill
                     if( c == '#' )
                     {
                         nEscapeState = 2;
-                        sbEscapeString = new System.Text.StringBuilder( sText.Length );
+                        sbEscapeString = new StringBuilder( sText.Length );
                     }
                     else 
                     {
@@ -1670,7 +1675,7 @@ namespace GEDmill
         // Returns the individual record with the given xref id.
         public CIndividualRecord GetIndividualRecord(string xref)
         {
-            if( xref == null || xref.Length == 0  )
+            if( string.IsNullOrEmpty(xref)  )
             {
                 return null;
             }
@@ -1935,7 +1940,7 @@ namespace GEDmill
             }
             else if( sc is CSourceCitationInLine )
             {
-                ((CSourceCitationInLine)sc).Restricted = bRestricted;
+                sc.Restricted = bRestricted;
             }
         }
 
@@ -2010,8 +2015,6 @@ namespace GEDmill
             {
                 fr.AddChildren( this );
             }
-
-            return;
         }
 
         // Begin with an empty table in which to record all individuals visited during the pruning process.
@@ -2045,14 +2048,14 @@ namespace GEDmill
         private void PruneDescendants( CIndividualRecord ir, bool bPruneSpouses, bool bExclude )
         {
             int nFamily = 0;
-            CFamilyRecord fr = null;
+            CFamilyRecord fr;
             while( (fr = GetFamilyBySpouse( ir, nFamily++ )) != null )
             {
                 int nChild = 0;
-                CIndividualRecord irChild = null;
+                CIndividualRecord irChild;
                 while( (irChild = fr.GetChildByBirthDate( nChild++ )) != null )
                 {
-                    if( irChild == null || m_htVisited.ContainsKey( irChild.m_xref ) )
+                    if( m_htVisited.ContainsKey( irChild.m_xref ) )
                     {
                         continue;
                     }
@@ -2258,7 +2261,6 @@ namespace GEDmill
 
             // Mark all ancestors
             nFamily = 0;
-            fr = null;
             while( (fr = GetFamilyByChild( ir, nFamily++ )) != null )
             {
                 CIndividualRecord irFather = GetHusband( fr );
@@ -2299,14 +2301,13 @@ namespace GEDmill
 
             // Mark all descendants
             nFamily = 0;
-            fr = null;
             while( (fr = GetFamilyBySpouse( ir, nFamily++ )) != null )
             {
                 int nChild = 0;
-                CIndividualRecord irChild = null;
+                CIndividualRecord irChild;
                 while ((irChild = fr.GetChildByBirthDate(nChild++)) != null)
                 {
-                    if( irChild == null || m_htVisited.ContainsKey( irChild.m_xref ) )
+                    if( m_htVisited.ContainsKey( irChild.m_xref ) )
                     {
                         continue;
                     }
@@ -2432,7 +2433,7 @@ namespace GEDmill
                 return "";
             }
 
-            System.Text.StringBuilder sbLineConverted = new System.Text.StringBuilder( sLine.Length );
+            StringBuilder sbLineConverted = new StringBuilder( sLine.Length );
             char cCombiner = '\0';
             foreach( char c in sLine )
             {

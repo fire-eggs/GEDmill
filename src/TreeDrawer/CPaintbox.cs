@@ -25,6 +25,7 @@
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 
 namespace GEDmill.ImageClasses
 {
@@ -138,8 +139,10 @@ namespace GEDmill.ImageClasses
     // Sets the brush used to fill the background to the graphics image provided.
     public void SetBackgroundImage(string filename)
     {
-      if (filename != null && filename.Length > 0)
-      {
+        if (string.IsNullOrEmpty(filename))
+            return;
+        if (!File.Exists(filename))
+            return;
         try
         {
           Image bgImage = Image.FromFile(filename);
@@ -151,7 +154,6 @@ namespace GEDmill.ImageClasses
           LogFile.TheLogFile.WriteLine(LogFile.DT_HTML, LogFile.EDebugLevel.Note, String.Format("SetBackgroundImage() Caught exception {0}", e.ToString()));
           m_brushFakeTransparency = null;
         }
-      }
     }
   }
 }

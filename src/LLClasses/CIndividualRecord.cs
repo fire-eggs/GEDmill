@@ -370,7 +370,7 @@ namespace GEDmill.LLClasses
                 }
                 CPersonalNameStructure pns = ((CPersonalNameStructure)m_alPersonalNameStructures[0]);
                 CPersonalNamePieces pnp = pns.m_personalNamePieces;
-                if (pnp == null)
+                if (pnp == null || pnp.m_sNamePieceNickname == null)
                 {
                     return "";
                 }
@@ -388,7 +388,7 @@ namespace GEDmill.LLClasses
                     return "";
                 }
                 CPersonalNameStructure pns = ((CPersonalNameStructure)m_alPersonalNameStructures[0]);
-                return pns.m_sUsedName;
+                return pns.m_sUsedName ?? "";
             }
         }
 

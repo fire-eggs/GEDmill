@@ -2123,6 +2123,9 @@ namespace GEDmill.HTMLClasses
     // Adds the given source citations to the given list of referenced sources, and returns an HTML link string.
     private static string AddSources( ref ArrayList referenceList, ArrayList sourceCitations )
     {
+        if (sourceCitations == null)
+            return "";
+
       LogFile.TheLogFile.WriteLine( LogFile.DT_HTML, LogFile.EDebugLevel.Note, "AddSources()" );
 
       string sourceRefs = "";
