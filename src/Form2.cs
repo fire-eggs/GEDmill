@@ -23,14 +23,21 @@
  */
 
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Collections;
+using System.Text;
 using System.Windows.Forms;
 using GEDmill.HTMLClasses;
 using System.IO;
 using System.Threading;
+using GEDmill.ImageClasses;
 using GEDmill.LLClasses;
+using SharpGEDParser;
 
+// ReSharper disable InconsistentNaming
+// ReSharper disable SpecifyACultureInStringConversionExplicitly
+// ReSharper disable LoopCanBeConvertedToQuery
 
 namespace GEDmill
 {
@@ -38,12 +45,16 @@ namespace GEDmill
     // This file contains the GUI event handlers and main application logic. The file Form1.cs contains the GUI building code.
     public partial class MainForm : Form
     {
+        // Stores and parses data from GEDCOM files
+        private CGedcom m_gedcom;
+        private GedParser m_yagp;
+
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Event handlers /////////////////////////////////////////////////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         // Event handler
-        private void backButton_click(object sender, System.EventArgs e)
+        private void backButton_click(object sender, EventArgs e)
         {
             LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "Back button");
 
@@ -65,9 +76,9 @@ namespace GEDmill
         }
 
         // Event handler
-        private void nextButton_click(object sender, System.EventArgs e)
+        private void nextButton_click(object sender, EventArgs e)
         {
-            LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "Next button clicked. current panel = " + m_nCurrentPanel.ToString());
+            LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "Next button clicked. current panel = " + m_nCurrentPanel);
 
             // Mustn't affect configPanel
             if (m_bConfigPanelOn)
@@ -121,7 +132,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void cancelButton_click(object sender, System.EventArgs e)
+        private void cancelButton_click(object sender, EventArgs e)
         {
             LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "Quit button clicked.");
 
@@ -159,7 +170,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void helpButton_click(object sender, System.EventArgs e)
+        private void helpButton_click(object sender, EventArgs e)
         {
             string sHelpFile = s_config.m_sApplicationPath + "\\" + m_sHelpFilename;
 
@@ -214,9 +225,9 @@ namespace GEDmill
         }
 
         // Event handler
-        private void configButton_click(object sender, System.EventArgs e)
+        private void configButton_click(object sender, EventArgs e)
         {
-            LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "Config button clicked. current panel = " + m_nCurrentPanel.ToString());
+            LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "Config button clicked. current panel = " + m_nCurrentPanel);
             
             if (!m_bConfigPanelOn)
             {
@@ -235,9 +246,9 @@ namespace GEDmill
         }
 
         // Event handler
-        private void configCancelButton_click(object sender, System.EventArgs e)
+        private void configCancelButton_click(object sender, EventArgs e)
         {
-            LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "Config reset button clicked. current panel = " + m_nCurrentPanel.ToString());
+            LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "Config reset button clicked. current panel = " + m_nCurrentPanel);
 
             // Ensure config panel on
             if (!m_bConfigPanelOn)
@@ -250,11 +261,11 @@ namespace GEDmill
         }
 
         // Event handler
-        private void buttonPruneRecordsSave_click(object sender, System.EventArgs e)
+        private void buttonPruneRecordsSave_click(object sender, EventArgs e)
         {
             LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "Panel 3 save button clicked.");
 
-            string sTitle = "Save settings for individuals";
+            const string sTitle = "Save settings for individuals";
 
             if (s_config.m_sExcludeFileDir.Length == 0)
             {
@@ -276,7 +287,7 @@ namespace GEDmill
             }
 
             FileStream fs = new FileStream(sFilename, FileMode.Create);
-            StreamWriter sw = new StreamWriter(fs, System.Text.Encoding.UTF8);
+            StreamWriter sw = new StreamWriter(fs, Encoding.UTF8);
 
             sw.WriteLine("// GEDmill " + m_sSoftwareVersion);
 
@@ -286,7 +297,7 @@ namespace GEDmill
                 {
                     if (lvi.Checked)
                     {
-                        LLClasses.CIndividualRecord ir = (LLClasses.CIndividualRecord)(((CListableBool)lvi).ISRecord);
+                        CIndividualRecord ir = (CIndividualRecord)(((CListableBool)lvi).ISRecord);
                         string sName = ir.Name;
                         if (sName.Length > 0)
                         {
@@ -308,7 +319,7 @@ namespace GEDmill
                 {
                     if (lvi.Checked)
                     {
-                        LLClasses.CSourceRecord sr = (LLClasses.CSourceRecord)(((CListableBool)lvi).ISRecord);
+                        CSourceRecord sr = (CSourceRecord)(((CListableBool)lvi).ISRecord);
                         string sDescriptiveTitle = sr.DescriptiveTitle;
                         if (sDescriptiveTitle.Length > 0)
                         {
@@ -332,7 +343,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void buttonPruneRecordsLoad_click(object sender, System.EventArgs e)
+        private void buttonPruneRecordsLoad_click(object sender, EventArgs e)
         {
             LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "Panel 3 load button clicked.");
 
@@ -368,7 +379,7 @@ namespace GEDmill
             bool bWarnOfDifferences = false;
             m_bDisablePrunepanelCheckEvent = true;
 
-            foreach (GEDmill.LLClasses.CIndividualRecord ir in m_gedcom.m_alIndividualRecords)
+            foreach (CIndividualRecord ir in m_gedcom.m_alIndividualRecords)
             {
                 bool bRestricted = true;
 
@@ -396,7 +407,7 @@ namespace GEDmill
             }
 
 
-            foreach (GEDmill.LLClasses.CSourceRecord sr in m_gedcom.m_alSourceRecords)
+            foreach (CSourceRecord sr in m_gedcom.m_alSourceRecords)
             {
                 // Earlier versions don't restrict sources at all
                 bool bRestricted = false; 
@@ -431,12 +442,12 @@ namespace GEDmill
 
             if ((nIndisUsedFromHash + nSourcesUsedFromHash) != htSelected.Count || bWarnOfDifferences)
             {
-                DialogResult dialogResult = MessageBocx.Show(this, "The GEDCOM file appears to have changed since this\r\nfile was saved. Changes may not be restored exactly.", "GEDCOM Changes Detected",
+                MessageBocx.Show(this, "The GEDCOM file appears to have changed since this\r\nfile was saved. Changes may not be restored exactly.", "GEDCOM Changes Detected",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning, false);
             }
             if (eVersion < EVersion.v1p9)
             {
-                DialogResult dialogResult = MessageBocx.Show(this, "This changes file came from an earlier version of GEDmill.\r\nSaving again is recommended in order to update the file.", "Earlier Version Of GEDmill Detected",
+                MessageBocx.Show(this, "This changes file came from an earlier version of GEDmill.\r\nSaving again is recommended in order to update the file.", "Earlier Version Of GEDmill Detected",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning, false);
             }
 
@@ -454,7 +465,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void buttonChooseGedcomBrowse_click(object sender, System.EventArgs e)
+        private void buttonChooseGedcomBrowse_click(object sender, EventArgs e)
         {
             LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "Panel 2 browse button clicked.");
 
@@ -478,7 +489,7 @@ namespace GEDmill
                 }
                 else
                 {
-                    openFileDialog.InitialDirectory = Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
+                    openFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
                 }
             }
 
@@ -498,25 +509,25 @@ namespace GEDmill
         }
 
         // Event handler
-        private void textboxChooseGedcom_textChanged(object sender, System.EventArgs e)
+        private void textboxChooseGedcom_textChanged(object sender, EventArgs e)
         {
             EnableNextButton();
         }
 
         // Event handler
-        private void textboxChooseOutput_textChanged(object sender, System.EventArgs e)
+        private void textboxChooseOutput_textChanged(object sender, EventArgs e)
         {
             EnableNextButton();
         }
 
         // Event handler
-        private void listboxSelectKey_selectedValueChanged(object sender, System.EventArgs e)
+        private void listboxSelectKey_selectedValueChanged(object sender, EventArgs e)
         {
             EnableKeyIndividualsDeleteButton();
         }
 
         // Event handler
-        private void buttonSelectKeyAdd_click(object sender, System.EventArgs e)
+        private void buttonSelectKeyAdd_click(object sender, EventArgs e)
         {
             // Use a dialog box to let them choose an individual
             IndividualBrowserDialog individualBrowserDialog = new IndividualBrowserDialog(this, false);
@@ -528,7 +539,7 @@ namespace GEDmill
                 return;
             }
 
-            LLClasses.CIndividualRecord ir = individualBrowserDialog.FirstSelectedIndividual;
+            CIndividualRecord ir = individualBrowserDialog.FirstSelectedIndividual;
 
             // Ensure they are only added once
             bool bAlreadyAdded = false;
@@ -549,7 +560,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void buttonSelectKeyDelete_click(object sender, System.EventArgs e)
+        private void buttonSelectKeyDelete_click(object sender, EventArgs e)
         {
             CNameXrefPair xrefPairName = (CNameXrefPair)m_listboxSelectKey.SelectedItem;
             if (xrefPairName != null)
@@ -573,7 +584,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void buttonChooseOutputBrowse_click(object sender, System.EventArgs e)
+        private void buttonChooseOutputBrowse_click(object sender, EventArgs e)
         {
             FolderBrowserDialog folderBrowserDialog1 = new FolderBrowserDialog();
             if (Directory.Exists(m_textboxChooseOutput.Text))
@@ -594,7 +605,7 @@ namespace GEDmill
                 }
                 else
                 {
-                    folderBrowserDialog1.SelectedPath = Environment.GetFolderPath(System.Environment.SpecialFolder.Personal) + "\\GEDmill_Output";
+                    folderBrowserDialog1.SelectedPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal) + "\\GEDmill_Output";
                 }
             }
             if (folderBrowserDialog1.ShowDialog() == DialogResult.OK)
@@ -613,17 +624,17 @@ namespace GEDmill
             {
                 m_linklabelAllDone.Links[m_linklabelAllDone.Links.IndexOf(e.Link)].Visited = true;
                 string sURL = m_linklabelAllDone.Text;
-                System.Diagnostics.Process.Start(sURL);
+                Process.Start(sURL);
             }
             catch (Exception e2)
             {
-                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, String.Format("Caught exception while viewing folder : {0}", e2.ToString()));
+                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, String.Format("Caught exception while viewing folder : {0}", e2));
                 m_linklabelAllDone.Links[m_linklabelAllDone.Links.IndexOf(e.Link)].Visited = bOldVisitedValue;
             }
         }
 
         // Event handler
-        private void configPanel_BackImage_BrowseButton_click(object sender, System.EventArgs e)
+        private void configPanel_BackImage_BrowseButton_click(object sender, EventArgs e)
         {
             LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "config panel back image browse button clicked.");
 
@@ -647,7 +658,7 @@ namespace GEDmill
                 }
                 else
                 {
-                    openFileDialog.InitialDirectory = Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
+                    openFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
                 }
             }
 
@@ -681,7 +692,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void configPanel_FrontImage_BrowseButton_click(object sender, System.EventArgs e)
+        private void configPanel_FrontImage_BrowseButton_click(object sender, EventArgs e)
         {
             LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "config panel front image browse button clicked.");
 
@@ -705,7 +716,7 @@ namespace GEDmill
                 }
                 else
                 {
-                    openFileDialog1.InitialDirectory = Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
+                    openFileDialog1.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
                 }
             }
 
@@ -740,13 +751,13 @@ namespace GEDmill
         }
 
         // Event handler
-        private void configPanel_TreeDiagrams_CheckBox_click(object sender, System.EventArgs e)
+        private void configPanel_TreeDiagrams_CheckBox_click(object sender, EventArgs e)
         {
             EnableMiniTreeButtons();
         }
 
         // Event handler
-        private void configPanel_MiniTreeColourIndiBackground_Button_click(object sender, System.EventArgs e)
+        private void configPanel_MiniTreeColourIndiBackground_Button_click(object sender, EventArgs e)
         {
             LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "configPanel_MiniTreeColourIndiBackground_Button_click.");
 
@@ -759,7 +770,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void configPanel_MiniTreeColourIndiHighlight_Button_click(object sender, System.EventArgs e)
+        private void configPanel_MiniTreeColourIndiHighlight_Button_click(object sender, EventArgs e)
         {
             LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "configPanel_MiniTreeColourIndiHighlight_Button_click.");
 
@@ -772,7 +783,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void configPanel_MiniTreeColourIndiBgConcealed_Button_click(object sender, System.EventArgs e)
+        private void configPanel_MiniTreeColourIndiBgConcealed_Button_click(object sender, EventArgs e)
         {
             LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "configPanel_MiniTreeColourIndiBgConcealed_Button_click.");
 
@@ -785,7 +796,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void configPanel_MiniTreeColourIndiShade_Button_click(object sender, System.EventArgs e)
+        private void configPanel_MiniTreeColourIndiShade_Button_click(object sender, EventArgs e)
         {
             LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "configPanel_MiniTreeColourIndiShade_Button_click.");
 
@@ -798,7 +809,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void configPanel_MiniTreeColourIndiText_Button_click(object sender, System.EventArgs e)
+        private void configPanel_MiniTreeColourIndiText_Button_click(object sender, EventArgs e)
         {
             LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "configPanel_MiniTreeColourIndiText_Button_click.");
 
@@ -811,7 +822,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void configPanel_MiniTreeColourIndiLink_Button_click(object sender, System.EventArgs e)
+        private void configPanel_MiniTreeColourIndiLink_Button_click(object sender, EventArgs e)
         {
             LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "configPanel_MiniTreeColourIndiLink_Button_click.");
 
@@ -824,7 +835,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void configPanel_MiniTreeColourBranch_Button_click(object sender, System.EventArgs e)
+        private void configPanel_MiniTreeColourBranch_Button_click(object sender, EventArgs e)
         {
             LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "configPanel_MiniTreeColourBranch_Button_click.");
 
@@ -837,7 +848,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void configPanel_MiniTreeColourIndiBorder_Button_click(object sender, System.EventArgs e)
+        private void configPanel_MiniTreeColourIndiBorder_Button_click(object sender, EventArgs e)
         {
             LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "configPanel_MiniTreeColourIndiBorder_Button_click.");
 
@@ -850,7 +861,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void configPanel_MiniTreeColourIndiFgConcealed_Button_click(object sender, System.EventArgs e)
+        private void configPanel_MiniTreeColourIndiFgConcealed_Button_click(object sender, EventArgs e)
         {
             LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "configPanel_MiniTreeColourIndiFgConcealed_Button_click.");
 
@@ -863,78 +874,78 @@ namespace GEDmill
         }
 
         // Event handler
-        private void configPanel_MultiPageIndex_CheckBox_click(object sender, System.EventArgs e)
+        private void configPanel_MultiPageIndex_CheckBox_click(object sender, EventArgs e)
         {
             LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "config panel multi page index button clicked.");
             EnableMultiPageIndexConfig();
         }
 
         // Event handler
-        private void configPanel_AllowMultimedia_CheckBox_click(object sender, System.EventArgs e)
+        private void configPanel_AllowMultimedia_CheckBox_click(object sender, EventArgs e)
         {
             LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "allow multimedia button clicked.");
             EnableMultimediaConfig();
         }
 
         // Event handler
-        private void configPanel_IndiImages_CheckBox_click(object sender, System.EventArgs e)
+        private void configPanel_IndiImages_CheckBox_click(object sender, EventArgs e)
         {
             LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "config panel multi images button clicked.");
             EnableThumbnailsConfig();
         }
 
         // Event handler
-        private void configPanel_ShowWithheldRecords_CheckBox_click(object sender, System.EventArgs e)
+        private void configPanel_ShowWithheldRecords_CheckBox_click(object sender, EventArgs e)
         {
             LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "config panel show withheld records button clicked.");
             EnableWithheldConfig();
         }
 
         // Event handler
-        private void configPanel_WithheldName_Label_click(object sender, System.EventArgs e)
+        private void configPanel_WithheldName_Label_click(object sender, EventArgs e)
         {
             LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "config panel withheld label clicked.");
             EnableWithheldConfig();
         }
 
         // Event handler
-        private void configPanel_Charset_ComboBox_changed(object sender, System.EventArgs e)
+        private void configPanel_Charset_ComboBox_changed(object sender, EventArgs e)
         {
             EnableBOMCheckBox();
         }
 
         // Event handler
-        private void pruneIndividualsContextMenuDetails_Click(Object sender, System.EventArgs e)
+        private void pruneIndividualsContextMenuDetails_Click(Object sender, EventArgs e)
         {
-            LLClasses.CIndividualRecord ir = null;
+            CIndividualRecord ir = null;
             CListableBool lb = null;
 
             if (m_listviewPruneRecordsIndis.SelectedItems.Count == 1)
             {
-                lb = (CListableBool)((ListViewItem)(m_listviewPruneRecordsIndis.SelectedItems[0]));
-                ir = (LLClasses.CIndividualRecord)lb.ISRecord;
+                lb = (CListableBool)m_listviewPruneRecordsIndis.SelectedItems[0];
+                ir = (CIndividualRecord)lb.ISRecord;
             }
 
             ShowIndividualDetailsDialog(this, lb, ir, true, true);
         }
 
         // Event handler
-        private void pruneSourcesContextMenuDetails_Click(Object sender, System.EventArgs e)
+        private void pruneSourcesContextMenuDetails_Click(Object sender, EventArgs e)
         {
-            LLClasses.CSourceRecord sr = null;
+            CSourceRecord sr = null;
             ListViewItem lvi = null;
 
             if (m_listviewPruneRecordsSources.SelectedItems.Count == 1)
             {
                 lvi = m_listviewPruneRecordsSources.SelectedItems[0];
-                sr = (LLClasses.CSourceRecord)((CListableBool)((ListViewItem)lvi)).ISRecord;
+                sr = (CSourceRecord)((CListableBool)lvi).ISRecord;
             }
 
-            ShowSourceDetailsDialog(this, ((CListableBool)((ListViewItem)lvi)), sr, true, true);
+            ShowSourceDetailsDialog(this, ((CListableBool)lvi), sr, true, true);
         }
 
         // Event handler
-        private void pruneIndividualsContextMenuUnconnected_Click(Object sender, System.EventArgs e)
+        private void pruneIndividualsContextMenuUnconnected_Click(Object sender, EventArgs e)
         {
             Cursor.Current = Cursors.WaitCursor;
             Cursor.Show();
@@ -952,7 +963,7 @@ namespace GEDmill
                 {
                     if (lvi is CListableBool)
                     {
-                        LLClasses.CIndividualRecord ir = (LLClasses.CIndividualRecord)((CListableBool)((ListViewItem)lvi)).ISRecord;
+                        CIndividualRecord ir = (CIndividualRecord)((CListableBool)lvi).ISRecord;
                         if (ir != null)
                         {
                             // First mark as visited all possible relations of irSubject, not following restricted people
@@ -967,7 +978,7 @@ namespace GEDmill
                 // Remove visited list
                 m_gedcom.EndPruning();
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 ReportPruneError(ex);
             }
@@ -982,7 +993,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void pruneIndividualsContextMenuDescendantsExc_Click(Object sender, System.EventArgs e)
+        private void pruneIndividualsContextMenuDescendantsExc_Click(Object sender, EventArgs e)
         {
             Cursor.Current = Cursors.WaitCursor;
             Cursor.Show();
@@ -998,7 +1009,7 @@ namespace GEDmill
                     ListViewItem lvi = m_listviewPruneRecordsIndis.SelectedItems[0];
                     if (lvi is CListableBool)
                     {
-                        LLClasses.CIndividualRecord ir = (LLClasses.CIndividualRecord)((CListableBool)((ListViewItem)lvi)).ISRecord;
+                        CIndividualRecord ir = (CIndividualRecord)((CListableBool)lvi).ISRecord;
                         if (ir != null)
                         {
                             m_gedcom.BeginPruning(); // Initialises visisted hash table
@@ -1008,7 +1019,7 @@ namespace GEDmill
                     }
                 }
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 ReportPruneError(ex);
             }
@@ -1024,7 +1035,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void pruneIndividualsContextMenuDescendantsInc_Click(Object sender, System.EventArgs e)
+        private void pruneIndividualsContextMenuDescendantsInc_Click(Object sender, EventArgs e)
         {
             Cursor.Current = Cursors.WaitCursor;
             Cursor.Show();
@@ -1040,7 +1051,7 @@ namespace GEDmill
                     ListViewItem lvi = m_listviewPruneRecordsIndis.SelectedItems[0];
                     if (lvi is CListableBool)
                     {
-                        LLClasses.CIndividualRecord ir = (LLClasses.CIndividualRecord)((CListableBool)((ListViewItem)lvi)).ISRecord;
+                        CIndividualRecord ir = (CIndividualRecord)((CListableBool)lvi).ISRecord;
                         if (ir != null)
                         {
                             m_gedcom.BeginPruning();
@@ -1050,7 +1061,7 @@ namespace GEDmill
                     }
                 }
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 ReportPruneError(ex);
             }
@@ -1065,7 +1076,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void pruneIndividualsContextMenuAncestorsExc_Click(Object sender, System.EventArgs e)
+        private void pruneIndividualsContextMenuAncestorsExc_Click(Object sender, EventArgs e)
         {
             Cursor.Current = Cursors.WaitCursor;
             Cursor.Show();
@@ -1081,7 +1092,7 @@ namespace GEDmill
                     ListViewItem lvi = m_listviewPruneRecordsIndis.SelectedItems[0];
                     if (lvi is CListableBool)
                     {
-                        LLClasses.CIndividualRecord ir = (LLClasses.CIndividualRecord)((CListableBool)((ListViewItem)lvi)).ISRecord;
+                        CIndividualRecord ir = (CIndividualRecord)((CListableBool)lvi).ISRecord;
                         if (ir != null)
                         {
                             m_gedcom.BeginPruning();
@@ -1091,7 +1102,7 @@ namespace GEDmill
                     }
                 }
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 ReportPruneError(ex);
             }
@@ -1106,7 +1117,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void pruneIndividualsContextMenuAncestorsInc_Click(Object sender, System.EventArgs e)
+        private void pruneIndividualsContextMenuAncestorsInc_Click(Object sender, EventArgs e)
         {
             Cursor.Current = Cursors.WaitCursor;
             Cursor.Show();
@@ -1122,7 +1133,7 @@ namespace GEDmill
                     ListViewItem lvi = m_listviewPruneRecordsIndis.SelectedItems[0];
                     if (lvi is CListableBool)
                     {
-                        LLClasses.CIndividualRecord ir = (LLClasses.CIndividualRecord)((CListableBool)((ListViewItem)lvi)).ISRecord;
+                        CIndividualRecord ir = (CIndividualRecord)((CListableBool)lvi).ISRecord;
                         if (ir != null)
                         {
                             m_gedcom.BeginPruning();
@@ -1132,7 +1143,7 @@ namespace GEDmill
                     }
                 }
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 ReportPruneError(ex);
             }
@@ -1147,7 +1158,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void pruneIndividualsContextMenuInclude_Click(Object sender, System.EventArgs e)
+        private void pruneIndividualsContextMenuInclude_Click(Object sender, EventArgs e)
         {
             Cursor.Current = Cursors.WaitCursor;
             Cursor.Show();
@@ -1159,7 +1170,7 @@ namespace GEDmill
             {
                 if (lvi is CListableBool)
                 {
-                    LLClasses.CIndividualRecord ir = (LLClasses.CIndividualRecord)((CListableBool)lvi).ISRecord;
+                    CIndividualRecord ir = (CIndividualRecord)((CListableBool)lvi).ISRecord;
 
                     if (ir.Restricted)
                     {
@@ -1182,7 +1193,7 @@ namespace GEDmill
 
         // Event handler
         // Removes pictures from the selected source
-        private void pruneSourcesContextMenuRemovePics_Click(Object sender, System.EventArgs e)
+        private void pruneSourcesContextMenuRemovePics_Click(Object sender, EventArgs e)
         {
             Cursor.Current = Cursors.WaitCursor;
             Cursor.Show();
@@ -1192,7 +1203,7 @@ namespace GEDmill
             {
                 if (lvi is CListableBool)
                 {
-                    LLClasses.CSourceRecord sr = (LLClasses.CSourceRecord)((CListableBool)((ListViewItem)lvi)).ISRecord;
+                    CSourceRecord sr = (CSourceRecord)((CListableBool)lvi).ISRecord;
                     if (sr != null)
                     {
                         int nHiddenThisTime = sr.SetAllMFRsVisible(false);
@@ -1221,7 +1232,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void pruneIndividualsContextMenuExclude_Click(Object sender, System.EventArgs e)
+        private void pruneIndividualsContextMenuExclude_Click(Object sender, EventArgs e)
         {
             Cursor.Current = Cursors.WaitCursor;
             Cursor.Show();
@@ -1233,7 +1244,7 @@ namespace GEDmill
             {
                 if (lvi is CListableBool)
                 {
-                    LLClasses.CIndividualRecord ir = (LLClasses.CIndividualRecord)((CListableBool)lvi).ISRecord;
+                    CIndividualRecord ir = (CIndividualRecord)((CListableBool)lvi).ISRecord;
                     if (!ir.Restricted)
                     {
                         ir.Restricted = true;
@@ -1253,7 +1264,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void pruneSourcesContextMenuInclude_Click(Object sender, System.EventArgs e)
+        private void pruneSourcesContextMenuInclude_Click(Object sender, EventArgs e)
         {
             Cursor.Current = Cursors.WaitCursor;
             Cursor.Show();
@@ -1265,7 +1276,7 @@ namespace GEDmill
             {
                 if (lvi is CListableBool)
                 {
-                    LLClasses.CSourceRecord sr = (LLClasses.CSourceRecord)((CListableBool)lvi).ISRecord;
+                    CSourceRecord sr = (CSourceRecord)((CListableBool)lvi).ISRecord;
                     if (sr.Restricted)
                     {
                         m_nPruneIncluded++;
@@ -1285,7 +1296,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void pruneSourcesContextMenuExclude_Click(Object sender, System.EventArgs e)
+        private void pruneSourcesContextMenuExclude_Click(Object sender, EventArgs e)
         {
             Cursor.Current = Cursors.WaitCursor;
             Cursor.Show();
@@ -1297,7 +1308,7 @@ namespace GEDmill
             {
                 if (lvi is CListableBool)
                 {
-                    LLClasses.CSourceRecord sr = (LLClasses.CSourceRecord)((CListableBool)lvi).ISRecord;
+                    CSourceRecord sr = (CSourceRecord)((CListableBool)lvi).ISRecord;
                     if (!sr.Restricted)
                     {
                         sr.Restricted = true;
@@ -1318,7 +1329,7 @@ namespace GEDmill
 
         // Event handler
         // Excludes people who aren't dead, but leave people we're not sure about
-        private void pruneIndividualsContextMenuAlive_Click(Object sender, System.EventArgs e)
+        private void pruneIndividualsContextMenuAlive_Click(Object sender, EventArgs e)
         {
             Cursor.Current = Cursors.WaitCursor;
             Cursor.Show();
@@ -1338,7 +1349,7 @@ namespace GEDmill
                 {
                     if (lvi is CListableBool)
                     {
-                        LLClasses.CIndividualRecord ir = (LLClasses.CIndividualRecord)((CListableBool)lvi).ISRecord;
+                        CIndividualRecord ir = (CIndividualRecord)((CListableBool)lvi).ISRecord;
                         if (ir != null)
                         {
                             CPGDate dateBorn = null;
@@ -1377,7 +1388,7 @@ namespace GEDmill
 
                 m_gedcom.EndPruning();
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 ReportPruneError(ex);
             }
@@ -1393,7 +1404,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void pruneIndividualsContextMenu_popup(System.Object sender, System.EventArgs e)
+        private void pruneIndividualsContextMenu_popup(Object sender, EventArgs e)
         {
             int nSelected = m_listviewPruneRecordsIndis.SelectedItems.Count;
             m_menuitemPruneRecordsIndisUnconnected.Enabled = (nSelected > 0);
@@ -1414,7 +1425,7 @@ namespace GEDmill
         }
 
         // Event handler
-        private void pruneSourcesContextMenu_popup(System.Object sender, System.EventArgs e)
+        private void pruneSourcesContextMenu_popup(Object sender, EventArgs e)
         {
             int nSelected = m_listviewPruneRecordsSources.SelectedItems.Count;
             m_menuitemPruneRecordsSourcesDetails.Enabled = (nSelected == 1);
@@ -1436,7 +1447,7 @@ namespace GEDmill
             {
                 CListableBool lb = (CListableBool)m_listviewPruneRecordsIndis.Items[e.Index];
                 // For some reason if user presses control while clicking any row of the list, it causes a check event. We don't want any checking to happen in that case.
-                if ((Control.ModifierKeys & Keys.Control) == 0)
+                if ((ModifierKeys & Keys.Control) == 0)
                 {
                     if (e.NewValue == CheckState.Checked && lb.ISRecord.Restricted
                         || e.NewValue == CheckState.Unchecked && !lb.ISRecord.Restricted)
@@ -1464,7 +1475,7 @@ namespace GEDmill
                 CListableBool lb = (CListableBool)m_listviewPruneRecordsSources.Items[e.Index];
 
                 // For some reason if user presses control while clicking any row of the list, it causes a check event. We don't want any checking to happen in that case.
-                if ((Control.ModifierKeys & Keys.Control) == 0)
+                if ((ModifierKeys & Keys.Control) == 0)
                 {
                     if (e.NewValue == CheckState.Checked && lb.ISRecord.Restricted
                      || e.NewValue == CheckState.Unchecked && !lb.ISRecord.Restricted)
@@ -1509,7 +1520,7 @@ namespace GEDmill
             }
             else
             {
-                fileDialog.InitialDirectory = Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
+                fileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
             }
 
             if (sFileName.Length > 0)
@@ -1546,7 +1557,6 @@ namespace GEDmill
             sFilterString += "All files (*.*)|*.*";
             fileDialog.Filter = sFilterString;
             fileDialog.FilterIndex = 1;
-            string sExtn = Path.GetExtension(fileDialog.FileName);
 
             // Check whether selected file matches given filter
             bool bValidExtn = true;
@@ -1644,7 +1654,7 @@ namespace GEDmill
         }
 
         // Brings up a CRecordDetailsForm for the given individual
-        public void ShowIndividualDetailsDialog(Form formParent, CListableBool lbItem, LLClasses.CIndividualRecord ir, bool bCanEditPictures, bool bCheckBoxes)
+        public void ShowIndividualDetailsDialog(Form formParent, CListableBool lbItem, CIndividualRecord ir, bool bCanEditPictures, bool bCheckBoxes)
         {
             CRecordDetailsForm detailsForm = new CRecordDetailsForm(formParent, ir, m_gedcom, bCanEditPictures, false);
             detailsForm.ShowDialog(this);
@@ -1666,7 +1676,7 @@ namespace GEDmill
             EnableCurrentPanel(false);
 
             // Move help button to its new location
-            m_buttonHelp.Location = new System.Drawing.Point(8, 288);
+            m_buttonHelp.Location = new Point(8, 288);
 
             // Flag panel as being on
             m_bConfigPanelOn = true;
@@ -1681,8 +1691,8 @@ namespace GEDmill
 
             // Make config button an "OK" button
             m_buttonSettings.Text = m_sConfigButtonTextOff;
-            m_buttonSettings.Location = new System.Drawing.Point(344, 288);
-            m_buttonSettings.Size = new System.Drawing.Size(m_ptDefaultButtonSize);
+            m_buttonSettings.Location = new Point(344, 288);
+            m_buttonSettings.Size = new Size(m_ptDefaultButtonSize);
 
             // Enable config panel
             EnableCurrentPanel(true);
@@ -1696,7 +1706,7 @@ namespace GEDmill
             EnableCurrentPanel(false);
 
             // Move help button to its usual location
-            m_buttonHelp.Location = new System.Drawing.Point(186, 288);
+            m_buttonHelp.Location = new Point(186, 288);
 
             // Flag panel as being off
             m_bConfigPanelOn = false;
@@ -1706,8 +1716,8 @@ namespace GEDmill
 
             // Make config button back to a config button
             m_buttonSettings.Text = m_sConfigButtonTextOn;
-            m_buttonSettings.Location = new System.Drawing.Point(88, 288);
-            m_buttonSettings.Size = new System.Drawing.Size(m_ptConfigButtonSize);
+            m_buttonSettings.Location = new Point(88, 288);
+            m_buttonSettings.Size = new Size(m_ptConfigButtonSize);
 
             // Enable generic panel
             EnableCurrentPanel(true);
@@ -1775,13 +1785,13 @@ namespace GEDmill
                     m_buttonCancel.Text = "&Finish";
                     // Can't go back , because we can't undo the file creations.
                     m_buttonBack.Visible = false; 
-                    m_buttonHelp.Location = new System.Drawing.Point(8, 288);
-                    m_buttonCancel.Location = new System.Drawing.Point(424, 288);
+                    m_buttonHelp.Location = new Point(8, 288);
+                    m_buttonCancel.Location = new Point(424, 288);
                     m_buttonNext.Visible = false;
                 }
                 else if (m_nCurrentPanel == 9)
                 {
-                    m_buttonHelp.Location = new System.Drawing.Point(8, 288);
+                    m_buttonHelp.Location = new Point(8, 288);
                     m_buttonNext.Text = "&Finish";
                     m_buttonCancel.Visible = false;
                     m_buttonHelp.Visible = false;
@@ -1808,7 +1818,7 @@ namespace GEDmill
                     m_buttonNext.Text = "&Next >";
                     m_buttonCancel.Visible = true;
                     m_buttonCancel.Text = "&Quit";
-                    m_buttonCancel.Location = new System.Drawing.Point(8, 288);
+                    m_buttonCancel.Location = new Point(8, 288);
                     m_buttonHelp.Visible = true;
                 }
 
@@ -1929,7 +1939,7 @@ namespace GEDmill
                 LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, String.Format("opening changes file {0}", filename));
 
                 fileStream = new FileStream(filename, FileMode.Open, FileAccess.Read);
-                streamReader = new StreamReader(fileStream, System.Text.Encoding.ASCII);
+                streamReader = new StreamReader(fileStream, Encoding.ASCII);
 
                 string sLine;
                 sLine = streamReader.ReadLine();
@@ -1982,7 +1992,7 @@ namespace GEDmill
                 {
                     if (sLine.IndexOf("GEDmill") == -1)
                     {
-                        DialogResult dialogResult = MessageBocx.Show(this, "The file you have selected is not a valid GEDmill file.", "Invalid File",
+                        MessageBocx.Show(this, "The file you have selected is not a valid GEDmill file.", "Invalid File",
                             MessageBoxButtons.OK, MessageBoxIcon.Exclamation, false);
                         return null;
                     }
@@ -2043,7 +2053,7 @@ namespace GEDmill
             }
             catch (Exception e)
             {
-                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, String.Format("A problem was encountered while reading the file : {0} line {1}", e.ToString(), uLineNumber));
+                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, String.Format("A problem was encountered while reading the file : {0} line {1}", e, uLineNumber));
             }
             finally
             {
@@ -2173,13 +2183,13 @@ namespace GEDmill
                     case "_VISIBLE":
                         if (isrc.m_mfrCurrent != null)
                         {
-                            isrc.m_mfrCurrent.m_bVisible = (sArg.ToUpper() == "TRUE") ? true : false;
+                            isrc.m_mfrCurrent.m_bVisible = (sArg.ToUpper() == "TRUE");
                         }
                         break;
                     case "_GEDCOM":
                         if (isrc.m_mfrCurrent != null)
                         {
-                            isrc.m_mfrCurrent.m_bFromGEDCOM = (sArg.ToUpper() == "TRUE") ? true : false;
+                            isrc.m_mfrCurrent.m_bFromGEDCOM = (sArg.ToUpper() == "TRUE");
                         }
                         break;
                     case "_INLINE":
@@ -2204,7 +2214,6 @@ namespace GEDmill
                         break;
                 }
             }
-            return;
         }
 
         // Saves the MFR to the changes file (MFR here is for the user's modifications to the multimedia attached to a record)
@@ -2213,7 +2222,7 @@ namespace GEDmill
             sw.WriteLine(" 1 OBJE");
             sw.WriteLine(String.Concat(" 2 FORM ", mfr.m_sMultimediaFormat));
             sw.WriteLine(String.Concat(" 2 TITL ", mfr.m_sDescriptiveTitle));
-            string sPicFilename = mfr.m_sMultimediaFileReference.Replace('\\', '/'); ;
+            string sPicFilename = mfr.m_sMultimediaFileReference.Replace('\\', '/');
             if (!mfr.m_bEmbedded)
             {
                 sw.WriteLine(String.Concat(" 2 FILE ", sPicFilename));
@@ -2391,6 +2400,9 @@ namespace GEDmill
 
                         }
 
+                        m_gedcom = new CGedcom();
+                        m_yagp = new GedParser(InputFile);
+
                         m_gedcom.Filename = InputFile;
                         m_gedcom.DataMayStartWithWhitespace = s_config.m_bDataMayStartWithWhitespace;
                         m_gedcom.DataMayEndWithWhitespace = s_config.m_bDataMayEndWithWhitespace;
@@ -2398,7 +2410,7 @@ namespace GEDmill
 
                         LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "Reading GEDCOM file " + InputFile);
 
-                        ThreadStart threadStart = new ThreadStart(m_gedcom.ParseFile);
+                        ThreadStart threadStart = m_gedcom.ParseFile;
                         Thread threadWorker = new Thread(threadStart);
 
                         LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "Starting thread");
@@ -2407,18 +2419,18 @@ namespace GEDmill
                         result = progressWindow.ShowDialog(this);
                         threadWorker.Join();
 
-                        LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "Thread finished, result=" + result.ToString());
+                        LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "Thread finished, result=" + result);
 
                         if (result == DialogResult.Abort) // Abort means abnormal failure (ie. not user pressing cancel)
                         {
                             // Abort means there were file IO errors
-                            MessageBocx.Show(m_mainForm, String.Format("A problem was encountered while reading the GEDCOM file:\r\n\r\n{0}", LogFile.TheLogFile.ErrorReport()), MainForm.m_sSoftwareName,
+                            MessageBocx.Show(m_mainForm, String.Format("A problem was encountered while reading the GEDCOM file:\r\n\r\n{0}", LogFile.TheLogFile.ErrorReport()), m_sSoftwareName,
                                 MessageBoxButtons.OK, MessageBoxIcon.Exclamation, true);
                         }
                         else if (result == DialogResult.Retry) // Something went wrong, let user retry
                         {
                             // Currently the only thing this can be is "file already open"
-                            MessageBocx.Show(m_mainForm, "A problem was encountered while reading the GEDCOM file.\r\n\r\nPerhaps the file is already open elsewhere.", MainForm.m_sSoftwareName,
+                            MessageBocx.Show(m_mainForm, "A problem was encountered while reading the GEDCOM file.\r\n\r\nPerhaps the file is already open elsewhere.", m_sSoftwareName,
                                 MessageBoxButtons.OK, MessageBoxIcon.Exclamation, true);
                         }
                         if (result != DialogResult.OK)
@@ -2436,7 +2448,7 @@ namespace GEDmill
                         bool bSomethingChecked = false;
                         foreach (ListViewItem li in m_listviewPruneRecordsIndis.Items)
                         {
-                            bool bChecked = ((ListViewItem)li).Checked;
+                            bool bChecked = li.Checked;
                             if (bChecked)
                             {
                                 bSomethingChecked = true;
@@ -2444,7 +2456,7 @@ namespace GEDmill
                             // Already done on click event: ((CListableBool)((ListViewItem)li)).SetRestricted( !bChecked );
                             if (!bChecked)
                             {
-                                m_gedcom.RestrictAssociatedSources((LLClasses.CIndividualRecord)(((CListableBool)((ListViewItem)li)).ISRecord));
+                                m_gedcom.RestrictAssociatedSources((CIndividualRecord)(((CListableBool)li).ISRecord));
                             }
                         }
 
@@ -2533,7 +2545,7 @@ namespace GEDmill
         // alSelectedIndividuals is a small array indicating xrefs of those individuals to mark selected. (not currently used, 3Jan08)
         private void FillIndividualsList(SortableListView listView, bool bExcludeRestricted, ArrayList alSelectedIndividuals, bool bFirstColumnIsCheckbox)
         {
-            LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "FillIndividualsList() : " + m_gedcom.m_alIndividualRecords.Count.ToString());
+            LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "FillIndividualsList() : " + m_gedcom.m_alIndividualRecords.Count);
 
             m_bDisablePrunepanelCheckEvent = true;
 
@@ -2560,10 +2572,10 @@ namespace GEDmill
             ListViewItem[] temporaryItemsList = new ListViewItem[m_gedcom.m_alIndividualRecords.Count];
 
             int nItem = 0;
-            foreach (GEDmill.LLClasses.CIndividualRecord ir in m_gedcom.m_alIndividualRecords)
+            foreach (CIndividualRecord ir in m_gedcom.m_alIndividualRecords)
             {
                 // Only allow fully unrestricted individuals.
-                if (bExcludeRestricted && ir.Visibility() != LLClasses.CIndividualRecord.EVisibility.Visible) 
+                if (bExcludeRestricted && ir.Visibility() != CIndividualRecord.EVisibility.Visible) 
                 {
                     continue;
                 }
@@ -2670,7 +2682,7 @@ namespace GEDmill
         // Populates the list of source records for inclusion/exclusion in the website
         private void FillSourcesList(SortableListView listView, bool bFirstColumnIsCheckbox)
         {
-            LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "FillSourcesList() : " + m_gedcom.m_alSourceRecords.Count.ToString());
+            LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "FillSourcesList() : " + m_gedcom.m_alSourceRecords.Count);
 
             m_bDisablePrunepanelCheckEvent = true; // call to item.Checked below invokes event handler.
 
@@ -2697,7 +2709,7 @@ namespace GEDmill
 
             ListViewItem[] temporaryItemsList = new ListViewItem[m_gedcom.m_alSourceRecords.Count];
             int nItem = 0;
-            foreach (GEDmill.LLClasses.CSourceRecord sr in m_gedcom.m_alSourceRecords)
+            foreach (CSourceRecord sr in m_gedcom.m_alSourceRecords)
             {
                 CListableBool item = new CListableBool(sr, bFirstColumnIsCheckbox);
                 SetSourceSubItems(item, sr, bFirstColumnIsCheckbox);
@@ -2825,11 +2837,11 @@ namespace GEDmill
         {
             try
             {
-                System.Diagnostics.Process.Start(sURL);
+                Process.Start(sURL);
             }
             catch (Exception e2)
             {
-                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, String.Format("Caught exception while opening finished webpages : {0}", e2.ToString()));
+                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, String.Format("Caught exception while opening finished webpages : {0}", e2));
             }
         }
 
@@ -2864,7 +2876,7 @@ namespace GEDmill
 
             CWebsite website = new CWebsite(m_gedcom, progressWindow);
 
-            ThreadStart threadStart = new ThreadStart(website.Create);
+            ThreadStart threadStart = website.Create;
             Thread threadWorker = new Thread(threadStart);
 
             LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "Starting progress thread");
@@ -2892,13 +2904,13 @@ namespace GEDmill
                 if (progressWindow.m_threaderror.m_sMessage == "")
                 {
                     // Abort means there were file IO errors
-                    MessageBocx.Show(m_mainForm, String.Format("A problem was encountered while creating the website files:\r\n\r\n{0}", LogFile.TheLogFile.ErrorReport()), MainForm.m_sSoftwareName,
+                    MessageBocx.Show(m_mainForm, String.Format("A problem was encountered while creating the website files:\r\n\r\n{0}", LogFile.TheLogFile.ErrorReport()), m_sSoftwareName,
                         MessageBoxButtons.OK, MessageBoxIcon.Exclamation, true);
                 }
                 else
                 {
                     // Abort means there were file IO errors
-                    MessageBocx.Show(m_mainForm, progressWindow.m_threaderror.m_sMessage, MainForm.m_sSoftwareName,
+                    MessageBocx.Show(m_mainForm, progressWindow.m_threaderror.m_sMessage, m_sSoftwareName,
                         MessageBoxButtons.OK, MessageBoxIcon.Exclamation, true);
                 }
             }
@@ -2939,7 +2951,7 @@ namespace GEDmill
         }
 
         // Displays useful information about a source record in a dialog box
-        private void ShowSourceDetailsDialog(Form formParent, CListableBool lbItem, LLClasses.CSourceRecord sr, bool bCanEditPictures, bool bFirstColumnIsCheckbox)
+        private void ShowSourceDetailsDialog(Form formParent, CListableBool lbItem, CSourceRecord sr, bool bCanEditPictures, bool bFirstColumnIsCheckbox)
         {
             CRecordDetailsForm detailsForm = new CRecordDetailsForm(formParent, sr, m_gedcom, bCanEditPictures, true);
             detailsForm.ShowDialog(this);
@@ -2951,12 +2963,12 @@ namespace GEDmill
         }
 
         // Reports any exception thrown during the prune operation
-        private void ReportPruneError(System.Exception e)
+        private void ReportPruneError(Exception e)
         {
-            MessageBocx.Show(m_mainForm, String.Format("A problem was encountered while navigating the tree structure:\r\n\r\n{0}", LogFile.TheLogFile.ErrorReport()), MainForm.m_sSoftwareName,
+            MessageBocx.Show(m_mainForm, String.Format("A problem was encountered while navigating the tree structure:\r\n\r\n{0}", LogFile.TheLogFile.ErrorReport()), m_sSoftwareName,
                 MessageBoxButtons.OK, MessageBoxIcon.Exclamation, true);
 
-            LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, String.Format("Caught navigation exception : {0}", e.ToString()));
+            LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, String.Format("Caught navigation exception : {0}", e));
         }
 
         // Helper function. Compares dates to see if we know this person is alive
@@ -3096,16 +3108,16 @@ namespace GEDmill
             m_checkboxConfigKeepSiblingOrder.Checked = s_config.m_bKeepSiblingOrder;
             m_checkboxConfigAllowMultimedia.Checked = s_config.m_bAllowMultimedia;
 
-            m_colorConfigMiniTreeBranch = ImageClasses.CPaintbox.ConvertColour(s_config.m_sMiniTreeColourBranch);
-            m_colorConfigMiniTreeIndiBorder = ImageClasses.CPaintbox.ConvertColour(s_config.m_sMiniTreeColourIndiBorder);
-            m_colorConfigMiniTreeIndiBackground = ImageClasses.CPaintbox.ConvertColour(s_config.m_sMiniTreeColourIndiBackground);
-            m_colorConfigMiniTreeIndiHighlight = ImageClasses.CPaintbox.ConvertColour(s_config.m_sMiniTreeColourIndiHighlight);
-            m_colorConfigMiniTreeIndiBgConcealed = ImageClasses.CPaintbox.ConvertColour(s_config.m_sMiniTreeColourIndiBgConcealed);
-            m_colorConfigMiniTreeIndiFgConcealed = ImageClasses.CPaintbox.ConvertColour(s_config.m_sMiniTreeColourIndiFgConcealed);
-            m_colorConfigMiniTreeIndiShade = ImageClasses.CPaintbox.ConvertColour(s_config.m_sMiniTreeColourIndiShade);
-            m_colorConfigMiniTreeIndiText = ImageClasses.CPaintbox.ConvertColour(s_config.m_sMiniTreeColourIndiText);
-            m_colorConfigMiniTreeIndiLink = ImageClasses.CPaintbox.ConvertColour(s_config.m_sMiniTreeColourIndiLink);
-            m_colorConfigMiniTreeBackground = ImageClasses.CPaintbox.ConvertColour(s_config.m_sMiniTreeColourBackground);
+            m_colorConfigMiniTreeBranch = CPaintbox.ConvertColour(s_config.m_sMiniTreeColourBranch);
+            m_colorConfigMiniTreeIndiBorder = CPaintbox.ConvertColour(s_config.m_sMiniTreeColourIndiBorder);
+            m_colorConfigMiniTreeIndiBackground = CPaintbox.ConvertColour(s_config.m_sMiniTreeColourIndiBackground);
+            m_colorConfigMiniTreeIndiHighlight = CPaintbox.ConvertColour(s_config.m_sMiniTreeColourIndiHighlight);
+            m_colorConfigMiniTreeIndiBgConcealed = CPaintbox.ConvertColour(s_config.m_sMiniTreeColourIndiBgConcealed);
+            m_colorConfigMiniTreeIndiFgConcealed = CPaintbox.ConvertColour(s_config.m_sMiniTreeColourIndiFgConcealed);
+            m_colorConfigMiniTreeIndiShade = CPaintbox.ConvertColour(s_config.m_sMiniTreeColourIndiShade);
+            m_colorConfigMiniTreeIndiText = CPaintbox.ConvertColour(s_config.m_sMiniTreeColourIndiText);
+            m_colorConfigMiniTreeIndiLink = CPaintbox.ConvertColour(s_config.m_sMiniTreeColourIndiLink);
+            m_colorConfigMiniTreeBackground = CPaintbox.ConvertColour(s_config.m_sMiniTreeColourBackground);
 
             m_checkboxConfigUseBom.Checked = s_config.m_bUseBom;
             m_checkboxConfigSupressBackreferences.Checked = !s_config.m_bSupressBackreferences;
@@ -3144,24 +3156,24 @@ namespace GEDmill
         // Used to set all buttons grey when form is disabled
         private void ClearMiniTreeColourConfigButtons()
         {
-            m_buttonConfigMiniTreeColourBranch.BackColor = Form.DefaultBackColor;
-            m_buttonConfigMiniTreeColourBranch.ForeColor = Form.DefaultForeColor;
-            m_buttonConfigMiniTreeColourIndiBorder.BackColor = Form.DefaultBackColor;
-            m_buttonConfigMiniTreeColourIndiBorder.ForeColor = Form.DefaultForeColor;
-            m_buttonConfigMiniTreeColourIndiBackground.BackColor = Form.DefaultBackColor;
-            m_buttonConfigMiniTreeColourIndiBackground.ForeColor = Form.DefaultForeColor;
-            m_buttonConfigMiniTreeColourIndiHighlight.BackColor = Form.DefaultBackColor;
-            m_buttonConfigMiniTreeColourIndiHighlight.ForeColor = Form.DefaultForeColor;
-            m_buttonConfigMiniTreeColourIndiBgConcealed.BackColor = Form.DefaultBackColor;
-            m_buttonConfigMiniTreeColourIndiBgConcealed.ForeColor = Form.DefaultForeColor;
-            m_buttonConfigMiniTreeColourIndiFgConcealed.BackColor = Form.DefaultBackColor;
-            m_buttonConfigMiniTreeColourIndiFgConcealed.ForeColor = Form.DefaultForeColor;
-            m_buttonConfigMiniTreeColourIndiShade.BackColor = Form.DefaultBackColor;
-            m_buttonConfigMiniTreeColourIndiShade.ForeColor = Form.DefaultForeColor;
-            m_buttonConfigMiniTreeColourIndiText.BackColor = Form.DefaultBackColor;
-            m_buttonConfigMiniTreeColourIndiText.ForeColor = Form.DefaultForeColor;
-            m_buttonConfigMiniTreeColourIndiLink.BackColor = Form.DefaultBackColor;
-            m_buttonConfigMiniTreeColourIndiLink.ForeColor = Form.DefaultForeColor;
+            m_buttonConfigMiniTreeColourBranch.BackColor = DefaultBackColor;
+            m_buttonConfigMiniTreeColourBranch.ForeColor = DefaultForeColor;
+            m_buttonConfigMiniTreeColourIndiBorder.BackColor = DefaultBackColor;
+            m_buttonConfigMiniTreeColourIndiBorder.ForeColor = DefaultForeColor;
+            m_buttonConfigMiniTreeColourIndiBackground.BackColor = DefaultBackColor;
+            m_buttonConfigMiniTreeColourIndiBackground.ForeColor = DefaultForeColor;
+            m_buttonConfigMiniTreeColourIndiHighlight.BackColor = DefaultBackColor;
+            m_buttonConfigMiniTreeColourIndiHighlight.ForeColor = DefaultForeColor;
+            m_buttonConfigMiniTreeColourIndiBgConcealed.BackColor = DefaultBackColor;
+            m_buttonConfigMiniTreeColourIndiBgConcealed.ForeColor = DefaultForeColor;
+            m_buttonConfigMiniTreeColourIndiFgConcealed.BackColor = DefaultBackColor;
+            m_buttonConfigMiniTreeColourIndiFgConcealed.ForeColor = DefaultForeColor;
+            m_buttonConfigMiniTreeColourIndiShade.BackColor = DefaultBackColor;
+            m_buttonConfigMiniTreeColourIndiShade.ForeColor = DefaultForeColor;
+            m_buttonConfigMiniTreeColourIndiText.BackColor = DefaultBackColor;
+            m_buttonConfigMiniTreeColourIndiText.ForeColor = DefaultForeColor;
+            m_buttonConfigMiniTreeColourIndiLink.BackColor = DefaultBackColor;
+            m_buttonConfigMiniTreeColourIndiLink.ForeColor = DefaultForeColor;
         }
 
         // Saves changes made in config panel back to main config.
@@ -3174,7 +3186,7 @@ namespace GEDmill
             try 
             {
                 // Sanity check value
-                uint uMaxImageWidth = System.UInt32.Parse(m_textboxConfigIndiImageWidth.Text);
+                uint uMaxImageWidth = UInt32.Parse(m_textboxConfigIndiImageWidth.Text);
                 if (uMaxImageWidth > 0 && uMaxImageWidth <= 300)
                 {
                     s_config.m_uMaxImageWidth = uMaxImageWidth;
@@ -3192,15 +3204,15 @@ namespace GEDmill
 
                 }
             }
-            catch (System.Exception)
+            catch (Exception)
             {
                 // Leave value unchanged
-            };
+            }
 
             try 
             {
                 // Sanity check value
-                uint uMaxImageHeight = System.UInt32.Parse(m_textboxConfigIndiImageHeight.Text);
+                uint uMaxImageHeight = UInt32.Parse(m_textboxConfigIndiImageHeight.Text);
                 if (uMaxImageHeight > 0 && uMaxImageHeight <= 800)
                 {
                     s_config.m_uMaxImageHeight = uMaxImageHeight;
@@ -3219,15 +3231,15 @@ namespace GEDmill
                 }
 
             }
-            catch (System.Exception)
+            catch (Exception)
             {
                 // Leave value unchanged
-            };
+            }
 
             try 
             {
                 // Sanity check value
-                uint uMaxSourceImageWidth = System.UInt32.Parse(m_textboxConfigSourceImageWidth.Text);
+                uint uMaxSourceImageWidth = UInt32.Parse(m_textboxConfigSourceImageWidth.Text);
                 if (uMaxSourceImageWidth > 0 && uMaxSourceImageWidth <= 800)
                 {
                     s_config.m_uMaxSourceImageWidth = uMaxSourceImageWidth;
@@ -3246,15 +3258,15 @@ namespace GEDmill
 
                 }
             }
-            catch (System.Exception)
+            catch (Exception)
             {
                 // Leave value unchanged
-            };
+            }
 
             try 
             {
                 // Sanity check value
-                uint uMaxSourceImageHeight = System.UInt32.Parse(m_textboxConfigSourceImageHeight.Text);
+                uint uMaxSourceImageHeight = UInt32.Parse(m_textboxConfigSourceImageHeight.Text);
                 if (uMaxSourceImageHeight > 0 && uMaxSourceImageHeight <= 800)
                 {
                     s_config.m_uMaxSourceImageHeight = uMaxSourceImageHeight;
@@ -3271,15 +3283,15 @@ namespace GEDmill
                     }
                 }
             }
-            catch (System.Exception)
+            catch (Exception)
             {
                 // Leave value unchanged
-            };
+            }
 
             try 
             {
                 // Sanity check value
-                uint uMaxThumbnailImageWidth = System.UInt32.Parse(m_textboxConfigThumbnailImageWidth.Text);
+                uint uMaxThumbnailImageWidth = UInt32.Parse(m_textboxConfigThumbnailImageWidth.Text);
                 if (uMaxThumbnailImageWidth > 0 && uMaxThumbnailImageWidth < 80)
                 {
                     s_config.m_uMaxThumbnailImageWidth = uMaxThumbnailImageWidth;
@@ -3296,15 +3308,15 @@ namespace GEDmill
                     }
                 }
             }
-            catch (System.Exception)
+            catch (Exception)
             {
                 // Leave value unchanged
-            };
+            }
 
             try 
             {
                 // Sanity check value
-                uint uMaxThumbnailImageHeight = System.UInt32.Parse(m_textboxConfigThumbnailImageHeight.Text);
+                uint uMaxThumbnailImageHeight = UInt32.Parse(m_textboxConfigThumbnailImageHeight.Text);
                 if (uMaxThumbnailImageHeight > 0 && uMaxThumbnailImageHeight < 80)
                 {
                     s_config.m_uMaxThumbnailImageHeight = uMaxThumbnailImageHeight;
@@ -3321,10 +3333,10 @@ namespace GEDmill
                     }
                 }
             }
-            catch (System.Exception)
+            catch (Exception)
             {
                 // Leave value unchanged
-            };
+            }
 
             s_config.m_ecHtmlCharset = (m_comboboxConfigCharset.SelectedIndex == 1 ? ECharset.UTF8 : ECharset.ISO8859_1);
             s_config.m_sHtmlExtension = (m_comboboxConfigHtmlExtn.SelectedIndex == 1 ? "html" : "htm");
@@ -3351,16 +3363,16 @@ namespace GEDmill
             try 
             {
                 // Sanity check value
-                uint uTabSpaces = System.UInt32.Parse(m_textboxConfigTabSpaces.Text);
+                uint uTabSpaces = UInt32.Parse(m_textboxConfigTabSpaces.Text);
                 if (uTabSpaces > 0 && uTabSpaces < 64)
                 {
                     s_config.m_uTabSpaces = uTabSpaces;
                 }
             }
-            catch (System.Exception)
+            catch (Exception)
             {
                 // Leave value unchanged
-            };
+            }
 
             s_config.m_sCommentaryText = m_textboxConfigCommentary.Text;
             s_config.m_bCommentaryIsHtml = m_checkboxConfigCommentaryIsHtml.Checked;
@@ -3420,13 +3432,13 @@ namespace GEDmill
             try 
             {
                 // Sanity check value
-                uint uIndex = System.UInt32.Parse(m_textboxConfigMultiPageIndexNumber.Text);
+                uint uIndex = UInt32.Parse(m_textboxConfigMultiPageIndexNumber.Text);
                 if (uIndex > 0)
                 {
                     s_config.m_uIndividualsPerIndexPage = uIndex;
                 }
             }
-            catch (System.Exception)
+            catch (Exception)
             {
                 // Leave value unchanged
             };
@@ -3440,16 +3452,16 @@ namespace GEDmill
             s_config.m_bAllowMultimedia = m_checkboxConfigAllowMultimedia.Checked;
 
 
-            s_config.m_sMiniTreeColourBranch = ImageClasses.CPaintbox.ConvertColour(m_colorConfigMiniTreeBranch);
-            s_config.m_sMiniTreeColourIndiBorder = ImageClasses.CPaintbox.ConvertColour(m_colorConfigMiniTreeIndiBorder);
-            s_config.m_sMiniTreeColourIndiBackground = ImageClasses.CPaintbox.ConvertColour(m_colorConfigMiniTreeIndiBackground);
-            s_config.m_sMiniTreeColourIndiHighlight = ImageClasses.CPaintbox.ConvertColour(m_colorConfigMiniTreeIndiHighlight);
-            s_config.m_sMiniTreeColourIndiBgConcealed = ImageClasses.CPaintbox.ConvertColour(m_colorConfigMiniTreeIndiBgConcealed);
-            s_config.m_sMiniTreeColourIndiFgConcealed = ImageClasses.CPaintbox.ConvertColour(m_colorConfigMiniTreeIndiFgConcealed);
-            s_config.m_sMiniTreeColourIndiShade = ImageClasses.CPaintbox.ConvertColour(m_colorConfigMiniTreeIndiShade);
-            s_config.m_sMiniTreeColourIndiText = ImageClasses.CPaintbox.ConvertColour(m_colorConfigMiniTreeIndiText);
-            s_config.m_sMiniTreeColourIndiLink = ImageClasses.CPaintbox.ConvertColour(m_colorConfigMiniTreeIndiLink);
-            s_config.m_sMiniTreeColourBackground = ImageClasses.CPaintbox.ConvertColour(m_colorConfigMiniTreeBackground);
+            s_config.m_sMiniTreeColourBranch = CPaintbox.ConvertColour(m_colorConfigMiniTreeBranch);
+            s_config.m_sMiniTreeColourIndiBorder = CPaintbox.ConvertColour(m_colorConfigMiniTreeIndiBorder);
+            s_config.m_sMiniTreeColourIndiBackground = CPaintbox.ConvertColour(m_colorConfigMiniTreeIndiBackground);
+            s_config.m_sMiniTreeColourIndiHighlight = CPaintbox.ConvertColour(m_colorConfigMiniTreeIndiHighlight);
+            s_config.m_sMiniTreeColourIndiBgConcealed = CPaintbox.ConvertColour(m_colorConfigMiniTreeIndiBgConcealed);
+            s_config.m_sMiniTreeColourIndiFgConcealed = CPaintbox.ConvertColour(m_colorConfigMiniTreeIndiFgConcealed);
+            s_config.m_sMiniTreeColourIndiShade = CPaintbox.ConvertColour(m_colorConfigMiniTreeIndiShade);
+            s_config.m_sMiniTreeColourIndiText = CPaintbox.ConvertColour(m_colorConfigMiniTreeIndiText);
+            s_config.m_sMiniTreeColourIndiLink = CPaintbox.ConvertColour(m_colorConfigMiniTreeIndiLink);
+            s_config.m_sMiniTreeColourBackground = CPaintbox.ConvertColour(m_colorConfigMiniTreeBackground);
 
             s_config.m_bUseBom = m_checkboxConfigUseBom.Checked;
             s_config.m_bSupressBackreferences = !m_checkboxConfigSupressBackreferences.Checked;
@@ -3464,7 +3476,7 @@ namespace GEDmill
                 return;
             }
 
-            LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "FillKeyIndividualsList() : " + s_config.m_alKeyIndividuals.Count.ToString());
+            LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "FillKeyIndividualsList() : " + s_config.m_alKeyIndividuals.Count);
 
             string sSurname;
             string sFirstName;
@@ -3479,7 +3491,7 @@ namespace GEDmill
             {
                 foreach (string xref in s_config.m_alKeyIndividuals)
                 {
-                    LLClasses.CIndividualRecord irKey = m_gedcom.GetIndividualRecord(xref);
+                    CIndividualRecord irKey = m_gedcom.GetIndividualRecord(xref);
                     if (irKey != null && !irKey.Restricted)
                     {
                         sFirstName = "";
@@ -3509,8 +3521,8 @@ namespace GEDmill
 
             string sMessage = "Could not access or create folder.";
             MessageBoxButtons messageBoxButtons = MessageBoxButtons.RetryCancel;
-            DialogResult dialogResult = DialogResult.OK;
-            bool bFailed = false;
+            DialogResult dialogResult;
+            bool bFailed;
             string sExceptionMessage = "";
 
             // First see if folder clashes with a file
@@ -3542,19 +3554,19 @@ namespace GEDmill
                     }
                     catch (IOException e)
                     {
-                        LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught IO exception : " + e.ToString());
+                        LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught IO exception : " + e);
                         sExceptionMessage = e.Message;
                         bFailed = true;
                     }
-                    catch (System.UnauthorizedAccessException e)
+                    catch (UnauthorizedAccessException e)
                     {
-                        LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught UnauthorizedAccessException(3) : " + e.ToString());
+                        LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught UnauthorizedAccessException(3) : " + e);
                         sExceptionMessage = e.Message;
                         bFailed = true;
                     }
-                    catch (System.Exception e)
+                    catch (Exception e)
                     {
-                        LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught generic exception(3) : " + e.ToString());
+                        LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught generic exception(3) : " + e);
                         sExceptionMessage = e.Message;
                         bFailed = true;
                     }
@@ -3583,7 +3595,7 @@ namespace GEDmill
 
                 if (CHTMLFile.IsDesktop(sOutputFolder))
                 {
-                    dialogResult = MessageBocx.Show(m_mainForm, "GEDmill will not allow you to create files directly on the Desktop", "Creating website", MessageBoxButtons.OK, MessageBoxIcon.Stop, false);
+                    MessageBocx.Show(m_mainForm, "GEDmill will not allow you to create files directly on the Desktop", "Creating website", MessageBoxButtons.OK, MessageBoxIcon.Stop, false);
                     LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "Desktop detected as output folder.");
                     return DialogResult.Cancel;
                 }
@@ -3638,19 +3650,19 @@ namespace GEDmill
                             }
                             catch (IOException e)
                             {
-                                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught IOException(2) : " + e.ToString());
+                                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught IOException(2) : " + e);
                                 sExceptionMessage = e.Message;
                                 bFailed = true;
                             }
-                            catch (System.UnauthorizedAccessException e)
+                            catch (UnauthorizedAccessException e)
                             {
-                                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught UnauthorizedAccessException(2) : " + e.ToString());
+                                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught UnauthorizedAccessException(2) : " + e);
                                 sExceptionMessage = e.Message;
                                 bFailed = true;
                             }
-                            catch (System.Exception e)
+                            catch (Exception e)
                             {
-                                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught generic exception(2) : " + e.ToString());
+                                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught generic exception(2) : " + e);
                                 sExceptionMessage = e.Message;
                                 bFailed = true;
                             }
@@ -3674,11 +3686,10 @@ namespace GEDmill
 
             // At last, try to create the folder
             bFailed = false;
-            DirectoryInfo directoryInfo = null;
             LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "Creating output folder.");
             try
             {
-                directoryInfo = Directory.CreateDirectory(sOutputFolder);
+                Directory.CreateDirectory(sOutputFolder);
             }
             // Order of catches is important here, due to hierarchy of exception classes.
             catch (DirectoryNotFoundException e)
@@ -3686,7 +3697,7 @@ namespace GEDmill
                 sMessage = "The folder you have selected could not be found.";
                 sExceptionMessage = e.Message;
                 messageBoxButtons = MessageBoxButtons.OK; // Ok meaning nothing you can do here, go back to main form.
-                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught DirectoryNotFoundException(5) : " + e.ToString());
+                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught DirectoryNotFoundException(5) : " + e);
                 bFailed = true;
             }
             catch (ArgumentNullException e)
@@ -3694,7 +3705,7 @@ namespace GEDmill
                 sMessage = "The folder name is missing or illegal.";
                 sExceptionMessage = e.Message;
                 messageBoxButtons = MessageBoxButtons.OK; // Ok meaning nothing you can do here, go back to main form.
-                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught ArgumentNullException(5) : " + e.ToString());
+                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught ArgumentNullException(5) : " + e);
                 bFailed = true;
             }
             catch (PathTooLongException e)
@@ -3702,7 +3713,7 @@ namespace GEDmill
                 sMessage = "The folder name you have selected is too long.";
                 sExceptionMessage = e.Message;
                 messageBoxButtons = MessageBoxButtons.OK; // Ok meaning nothing you can do here, go back to main form.
-                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught PathTooLongException(5) : " + e.ToString());
+                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught PathTooLongException(5) : " + e);
                 bFailed = true;
             }
             catch (IOException e)
@@ -3710,7 +3721,7 @@ namespace GEDmill
                 sMessage = "The path you have selected is read-only, or the folder is not empty.";
                 sExceptionMessage = e.Message;
                 messageBoxButtons = MessageBoxButtons.RetryCancel; // Let them correct this outside of app
-                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught IOException(5) : " + e.ToString());
+                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught IOException(5) : " + e);
                 bFailed = true;
             }
             catch (UnauthorizedAccessException e)
@@ -3718,7 +3729,7 @@ namespace GEDmill
                 sMessage = "You do not have the correct permissions to access the folder.";
                 sExceptionMessage = e.Message;
                 messageBoxButtons = MessageBoxButtons.RetryCancel; // Let them correct this outside of app
-                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught UnauthorizedAccessException(5) : " + e.ToString());
+                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught UnauthorizedAccessException(5) : " + e);
                 bFailed = true;
             }
             catch (ArgumentException e)
@@ -3726,7 +3737,7 @@ namespace GEDmill
                 sMessage = "The folder name you have selected is of an illegal format.";
                 sExceptionMessage = e.Message;
                 messageBoxButtons = MessageBoxButtons.OK; // Ok meaning nothing you can do here, go back to main form.
-                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught ArgumentException(5) : " + e.ToString());
+                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught ArgumentException(5) : " + e);
                 bFailed = true;
             }
             catch (NotSupportedException e)
@@ -3734,7 +3745,7 @@ namespace GEDmill
                 sMessage = "The folder name you have selected is of an unsupported format.";
                 sExceptionMessage = e.Message;
                 messageBoxButtons = MessageBoxButtons.OK; // Ok meaning nothing you can do here, go back to main form.
-                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught NotSupportedException(5) : " + e.ToString());
+                LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Error, "Caught NotSupportedException(5) : " + e);
                 bFailed = true;
             }
 
