@@ -2031,7 +2031,7 @@ namespace GEDmill.HTMLClasses
 
       string eventNote = "";
 
-      if (cause != "")
+      if (!string.IsNullOrEmpty(cause))
       {
         cause = EscapeHTML(cause, false);
         if (MainForm.s_config.m_bCapitaliseEventDescriptions)

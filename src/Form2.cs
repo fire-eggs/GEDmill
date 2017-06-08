@@ -2852,7 +2852,7 @@ namespace GEDmill
             DialogResult dialogResult;
 
             // If user has specified a background image, check it exists
-            if (s_config.m_sBackgroundImage != null && s_config.m_sBackgroundImage.Length != 0 && File.Exists(s_config.m_sBackgroundImage) == false)
+            if (!string.IsNullOrEmpty(s_config.m_sBackgroundImage) && !File.Exists(s_config.m_sBackgroundImage))
             {
                 LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Warning, "Can't find background image " + s_config.m_sBackgroundImage);
 
