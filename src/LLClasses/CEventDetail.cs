@@ -25,10 +25,14 @@
 using System;
 using System.Collections;
 
+// ReSharper disable InconsistentNaming
+// ReSharper disable StringCompareToIsCultureSpecific
+// ReSharper disable UseObjectOrCollectionInitializer
+
 namespace GEDmill.LLClasses
 {
     // GEDCOM Event Detail. See GEDCOM standard for details on GEDCOM data.
-    public class CEventDetail : GEDmill.LLClasses.CParserObject
+    public class CEventDetail : CParserObject
     {
         // GEDCOM data
         public string m_sEventOrFactClassification;
@@ -63,30 +67,11 @@ namespace GEDmill.LLClasses
         public CEventDetail( CEventDetail ed ) : base( ed.Gedcom )
         {
             m_sEventOrFactClassification = ed.m_sEventOrFactClassification;
-            if( ed.m_dateValue != null )
-            {
-                m_dateValue = new CPGDate( ed.m_dateValue );
-            }
-            else
-            {
-                m_dateValue = null;
-            }
-            if( ed.m_placeStructure != null )
-            {
-                m_placeStructure = new CPlaceStructure( ed.m_placeStructure );
-            }
-            else
-            {
-                m_placeStructure = null;
-            }
-            if( ed.m_addressStructure != null )
-            {
-                m_addressStructure = new CAddressStructure( ed.m_addressStructure );
-            }
-            else
-            {
-                m_addressStructure = null;
-            }                   
+
+            m_dateValue = ed.m_dateValue != null ? new CPGDate( ed.m_dateValue ) : null;
+            m_placeStructure = ed.m_placeStructure != null ? new CPlaceStructure( ed.m_placeStructure ) : null;
+            m_addressStructure = ed.m_addressStructure != null ? new CAddressStructure( ed.m_addressStructure ) : null; 
+                  
             m_sResponsibleAgency = ed.m_sResponsibleAgency;
             m_sReligiousAffiliation = ed.m_sReligiousAffiliation;
             m_sCauseOfEvent = ed.m_sCauseOfEvent;
@@ -116,10 +101,26 @@ namespace GEDmill.LLClasses
             m_sAlternativePlace = ed.m_sAlternativePlace;
         }
 
+        public static CEventDetail Translate(CGedcom gedcom, SharpGEDParser.Model.IndiEvent ev)
+        {
+            CEventDetail ed = new CEventDetail(gedcom);
+            ed.Type = ev.Tag;
+            ed.m_dateValue = CPGDate.Parse(ev.Date);
+            ed.m_placeStructure = CPlaceStructure.Translate(gedcom, ev);
+            return ed;
+        }
+        public static CEventDetail Translate(CGedcom gedcom, SharpGEDParser.Model.FamilyEvent ev)
+        {
+            CEventDetail ed = new CEventDetail(gedcom);
+            ed.Type = ev.Tag;
+            ed.m_dateValue = CPGDate.Parse(ev.Date);
+            ed.m_placeStructure = CPlaceStructure.Translate(gedcom, ev);
+            return ed;
+        }
+
         // Parser
         public static CEventDetail Parse( CGedcom gedcom, int nLevel )
         {
-            CGedcomLine gedcomLine;
             bool bParsingFinished;
             bool bGotSomething;
 
@@ -145,7 +146,6 @@ namespace GEDmill.LLClasses
             string sOverview = "";
 
 
-            CNoteStructure ns;
             CSourceCitation sc;
             CMultimediaLink ml;
 
@@ -154,6 +154,7 @@ namespace GEDmill.LLClasses
             {
                 bParsingFinished = true;
 
+                CGedcomLine gedcomLine;
                 if( (gedcomLine = gedcom.GetLine(nLevel, "FAMC")) != null )
                 {
                     xrefFam = gedcomLine.LinePointer;
@@ -163,7 +164,6 @@ namespace GEDmill.LLClasses
                     {
                         sPlaceAlternative = gedcomLine.LineItem;
                         gedcom.IncrementLineIndex(1);
-                        bParsingFinished = false;
                         bGotSomething = true;
                     }
                     else if( (gedcomLine = gedcom.GetLine(nLevel, "_OVER")) != null )
@@ -190,7 +190,6 @@ namespace GEDmill.LLClasses
                         }
                         while( !bParsingFinished3 );                    
                         
-                        bParsingFinished = false;
                         bGotSomething = true;
                     }
                     else if( (gedcomLine = gedcom.GetLine(nLevel+1, "ADOP")) != null )
@@ -290,48 +289,52 @@ namespace GEDmill.LLClasses
                     bParsingFinished = false;
                     bGotSomething = true;
                 }
-                else if( (ns = CNoteStructure.Parse( gedcom, nLevel )) != null )
+                else
                 {
-                    alNoteStructures.Add( ns );
-                    bParsingFinished = false;
-                    bGotSomething = true;
-                }
-                else if( (gedcomLine = gedcom.GetLine(nLevel, "AGE")) != null )
-                {
-                    sAgeAtEvent = gedcomLine.LineItem;
-                    gedcom.IncrementLineIndex(1);
-                    bParsingFinished = false;
-                    bGotSomething = true;
-                }
-                else if( (gedcomLine = gedcom.GetLine(nLevel, "HUSB")) != null )
-                {
-                    gedcom.IncrementLineIndex(1);
-                    if( (gedcomLine = gedcom.GetLine(nLevel+1, "AGE")) != null )
+                    CNoteStructure ns;
+                    if( (ns = CNoteStructure.Parse( gedcom, nLevel )) != null )
                     {
-                        sHusbandAgeAtEvent = gedcomLine.LineItem;
+                        alNoteStructures.Add( ns );
+                        bParsingFinished = false;
+                        bGotSomething = true;
+                    }
+                    else if( (gedcomLine = gedcom.GetLine(nLevel, "AGE")) != null )
+                    {
+                        sAgeAtEvent = gedcomLine.LineItem;
                         gedcom.IncrementLineIndex(1);
                         bParsingFinished = false;
                         bGotSomething = true;
                     }
-                }               
-                else if( (gedcomLine = gedcom.GetLine(nLevel, "WIFE")) != null )
-                {
-                    gedcom.IncrementLineIndex(1);
-                    if( (gedcomLine = gedcom.GetLine(nLevel+1, "AGE")) != null )
+                    else if( (gedcomLine = gedcom.GetLine(nLevel, "HUSB")) != null )
                     {
-                        sWifeAgeAtEvent = gedcomLine.LineItem;
+                        gedcom.IncrementLineIndex(1);
+                        if( (gedcomLine = gedcom.GetLine(nLevel+1, "AGE")) != null )
+                        {
+                            sHusbandAgeAtEvent = gedcomLine.LineItem;
+                            gedcom.IncrementLineIndex(1);
+                            bParsingFinished = false;
+                            bGotSomething = true;
+                        }
+                    }               
+                    else if( (gedcomLine = gedcom.GetLine(nLevel, "WIFE")) != null )
+                    {
+                        gedcom.IncrementLineIndex(1);
+                        if( (gedcomLine = gedcom.GetLine(nLevel+1, "AGE")) != null )
+                        {
+                            sWifeAgeAtEvent = gedcomLine.LineItem;
+                            gedcom.IncrementLineIndex(1);
+                            bParsingFinished = false;
+                            bGotSomething = true;
+                        }
+                    }               
+                    else if( ( gedcomLine = gedcom.GetLine()).Level >= nLevel )
+                    {
+                        LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Warning, "Unknown tag :" );
+                        LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Warning, gedcomLine.ToString() );
                         gedcom.IncrementLineIndex(1);
                         bParsingFinished = false;
-                        bGotSomething = true;
                     }
-                }               
-                else if( ( gedcomLine = gedcom.GetLine()).Level >= nLevel )
-                {
-                    LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Warning, "Unknown tag :" );
-                    LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Warning, gedcomLine.ToString() );
-                    gedcom.IncrementLineIndex(1);
-                    bParsingFinished = false;
-                }       
+                }
             }
             while( !bParsingFinished );
 

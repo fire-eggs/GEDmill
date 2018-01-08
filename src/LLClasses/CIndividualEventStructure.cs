@@ -23,13 +23,16 @@
  */
 
 using System;
-using GEDmill.HTMLClasses;
+using SharpGEDParser.Model;
+
+// ReSharper disable UseObjectOrCollectionInitializer
+// ReSharper disable StringCompareToIsCultureSpecific
 
 namespace GEDmill.LLClasses
 {
     // GEDCOM individual events and attributes. See GEDCOM standard for details on GEDCOM data.
     // Also encompassed INDIVIDUAL_ATTRIBUTE_STRUCTURE
-    public class CIndividualEventStructure : GEDmill.LLClasses.CEventStructure, IComparable
+    public class CIndividualEventStructure : CEventStructure, IComparable
     {
         // Constructor
         public CIndividualEventStructure( CGedcom gedcom ) : base( gedcom )
@@ -40,6 +43,14 @@ namespace GEDmill.LLClasses
         public CIndividualEventStructure( CEventDetail ed ) : base( ed.Gedcom )
         {
             m_eventDetail = new CEventDetail( ed );
+        }
+
+        public static CIndividualEventStructure Translate(CGedcom gedcom, IndiEvent indiEvent)
+        {
+            var ies = new CIndividualEventStructure(gedcom);
+            ies.m_eventDetail = CEventDetail.Translate(gedcom, indiEvent);
+            ies.Type = indiEvent.Tag;
+            return ies;
         }
 
         // Parser

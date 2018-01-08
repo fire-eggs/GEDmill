@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections;
+using SharpGEDParser.Model;
 
 namespace GEDmill.LLClasses
 {
@@ -55,6 +56,12 @@ namespace GEDmill.LLClasses
             m_alDataNoteStructures = new ArrayList();
             m_bRequiredInHTML = false;
             m_alBackreferences = new ArrayList();
+        }
+
+        public static CSourceRecord Translate(CGedcom gedcom, SourceRecord yagpSour)
+        {
+            var rec = new CSourceRecord(gedcom);
+            return rec;
         }
 
         // Parser

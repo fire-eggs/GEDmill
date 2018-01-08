@@ -24,12 +24,13 @@
 
 using System;
 using System.Collections;
-using GEDmill.HTMLClasses;
+using System.Collections.Generic;
+using SharpGEDParser.Model;
 
 namespace GEDmill.LLClasses
 {
     // GEDCOM 'INDI'. See GEDCOM standard for details on GEDCOM data.
-    public class CIndividualRecord : GEDmill.LLClasses.CISRecord
+    public class CIndividualRecord : CISRecord
     {
         public enum EVisibility
         {
@@ -43,7 +44,7 @@ namespace GEDmill.LLClasses
         public ArrayList m_alPersonalNameStructures;
         public string m_sSexValue;
         // Also includes AttributeStructures:
-        public ArrayList m_alIndividualEventStructures;
+        public List<CIndividualEventStructure> m_alIndividualEventStructures;
         public ArrayList m_alLdsIndividualOrdinances;
         public ArrayList m_alChildToFamilyLinks;
         public ArrayList m_alSpouseToFamilyLinks;
@@ -60,9 +61,8 @@ namespace GEDmill.LLClasses
         // Constructor
         public CIndividualRecord( CGedcom gedcom ) : base( gedcom )
         {
-
             m_alPersonalNameStructures = new ArrayList();
-            m_alIndividualEventStructures = new ArrayList();
+            m_alIndividualEventStructures = new List<CIndividualEventStructure>();
             m_alLdsIndividualOrdinances = new ArrayList();
             m_alChildToFamilyLinks = new ArrayList();
             m_alSpouseToFamilyLinks = new ArrayList();
@@ -72,9 +72,69 @@ namespace GEDmill.LLClasses
             m_alXrefAncis = new ArrayList();
             m_alXrefDesis = new ArrayList();
             m_alSourceCitations = new ArrayList();
-
         }
-        
+
+        public IndiRecord YAGP { get; set; }
+
+        public static CIndividualRecord Translate(CGedcom gedcom, IndiRecord yagpIndi)
+        {
+            CIndividualRecord ir = new CIndividualRecord(gedcom);
+            ir.m_xref = yagpIndi.Ident;
+            ir.m_sSexValue = yagpIndi.FullSex;
+            ir.YAGP = yagpIndi;
+
+            foreach (var nameRec in yagpIndi.Names)
+            {
+                CPersonalNameStructure pns = new CPersonalNameStructure(gedcom);
+                if (!string.IsNullOrEmpty(nameRec.Names))
+                    pns.m_sNamePersonal = nameRec.Names + " ";
+                pns.m_sNamePersonal += "/" + nameRec.Surname + "/";
+                ir.m_alPersonalNameStructures.Add(pns);
+            }
+
+            foreach (var indiEvent in yagpIndi.Events)
+            {
+                CIndividualEventStructure ies = CIndividualEventStructure.Translate(gedcom, indiEvent);
+                ir.m_alIndividualEventStructures.Add(ies);
+            }
+
+            foreach (var indiLink in yagpIndi.Links)
+            {
+                if (indiLink.Tag == "FAMC")
+                {
+                    CChildToFamilyLink cfl = new CChildToFamilyLink(gedcom);
+                    cfl.m_xrefFam = indiLink.Xref;
+                    cfl.m_sPedigreeLinkageType = indiLink.Pedi;
+                    cfl.m_sChildLinkageStatus = indiLink.Stat;
+                    // TODO notes
+                    ir.m_alChildToFamilyLinks.Add(cfl);
+                }
+                else if (indiLink.Tag == "FAMS")
+                {
+                    CSpouseToFamilyLink sfl = new CSpouseToFamilyLink(gedcom);
+                    sfl.m_xrefFam = indiLink.Xref;
+                    // TODO notes
+                    ir.m_alSpouseToFamilyLinks.Add( sfl );
+                }
+
+            }
+
+            foreach (var note in yagpIndi.Notes)
+            {
+                var ns = CNoteStructure.Translate(gedcom, note);
+                ir.m_alNoteStructures.Add(ns);
+            }
+
+            // TODO html output parses the date which we just converted, then uses ToString on it ...
+            if (yagpIndi.CHAN.Date.HasValue)
+            {
+                ir.m_changeDate = new CChangeDate(gedcom);
+                ir.m_changeDate.m_sChangeDate = yagpIndi.CHAN.Date.Value.ToString("dd MMM yyyy");
+                ir.m_changeDate.m_sTimeValue = ""; // won't accept null
+            }
+            return ir;
+        }
+
         // Parser
         public static CIndividualRecord Parse( CGedcom gedcom, int nLevel )
         {

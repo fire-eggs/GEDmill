@@ -24,11 +24,12 @@
 
 using System;
 using System.Collections;
+using SharpGEDParser.Model;
 
 namespace GEDmill.LLClasses
 {
     // GEDCOM note structure
-    public abstract class CNoteStructure : GEDmill.LLClasses.CParserObject
+    public abstract class CNoteStructure : CParserObject
     {
         // GEDCOM source citations
         public ArrayList m_alSourceCitations;
@@ -40,6 +41,23 @@ namespace GEDmill.LLClasses
 
         // Copy constructor
         public abstract CNoteStructure CopyConstructor();
+
+        public static CNoteStructure Translate(CGedcom gedcom, Note yagp)
+        {
+            // TODO who has _ASID and _AREA
+            if (string.IsNullOrEmpty(yagp.Xref))
+            {
+                var ns = new CNoteStructureInLine(gedcom);
+                ns.m_sSubmitterText = yagp.Text;
+                return ns;
+            }
+            else
+            {
+                var ns = new CNoteStructureXref(gedcom);
+                ns.m_xref = yagp.Xref;
+                return ns;
+            }
+        }
 
         // Parser
         public static CNoteStructure Parse( CGedcom gedcom, int level )

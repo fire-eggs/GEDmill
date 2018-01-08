@@ -1788,7 +1788,7 @@ namespace GEDmill.HTMLClasses
 
         case "PROP":
           escaped_description = "property";
-          if (es.Value != null && es.Value != "")
+          if (!string.IsNullOrEmpty(es.Value))
             escaped_description = String.Concat(escaped_description, " ", EscapeHTML(es.Value, false));
           else
             bNeedValue = true;
@@ -1804,7 +1804,7 @@ namespace GEDmill.HTMLClasses
 
         case "RESI":
           escaped_description = "resident";
-          if (es.Value != null && es.Value != "")
+          if (!string.IsNullOrEmpty(es.Value))
             escaped_description = String.Concat(escaped_description, " ", EscapeHTML(es.Value, false));
           else
             bNeedValue = false; // Special case, we need the "at" word left in for this.
@@ -1812,7 +1812,7 @@ namespace GEDmill.HTMLClasses
 
         case "SSN":
           escaped_description = "Social Security number";
-          if (es.Value != null && es.Value != "")
+          if (!string.IsNullOrEmpty(es.Value))
             escaped_description = String.Concat(escaped_description, " ", EscapeHTML(es.Value, false));
           else
             bNeedValue = true;
@@ -1825,7 +1825,7 @@ namespace GEDmill.HTMLClasses
 
         case "FACT":
           escaped_description = "other fact";
-          if (es.Value != null && es.Value != "")
+          if (!string.IsNullOrEmpty(es.Value))
             escaped_description = String.Concat(escaped_description, " ", EscapeHTML(es.Value, false));
           else
             bNeedValue = true;
@@ -1835,7 +1835,7 @@ namespace GEDmill.HTMLClasses
         case "_NMR": // _NMR Brother's Keeper
           bTypeIsAOneOff = true;
           escaped_description = "never married";
-          if (es.Value != null && es.Value != "")
+          if (!string.IsNullOrEmpty(es.Value))
             escaped_description = String.Concat(escaped_description, " ", EscapeHTML(es.Value, false));
           else
             bNeedValue = true;
@@ -1844,7 +1844,7 @@ namespace GEDmill.HTMLClasses
         case "_AKA": // _AKA Brother's Keeper
         case "_AKAN": // _AKAN Brother's Keeper
           escaped_description = "also known as";
-          if (es.Value != null && es.Value != "")
+          if (!string.IsNullOrEmpty(es.Value))
             escaped_description = String.Concat(escaped_description, " ", EscapeHTML(es.Value, false));
           else
             bNeedValue = true;
@@ -1853,11 +1853,11 @@ namespace GEDmill.HTMLClasses
         // Now the fr events:
         case "ANUL":
           escaped_description = "annulment of marriage";
-          if (es.Value != null && es.Value != "")
+          if (!string.IsNullOrEmpty(es.Value))
             escaped_description = String.Concat(escaped_description, " ", EscapeHTML(es.Value, false));
           else
             bNeedValue = true;
-          if (linkToOtherParty != null && linkToOtherParty != "")
+          if (!string.IsNullOrEmpty(linkToOtherParty))
           {
             escaped_description = String.Concat(escaped_description, " to ", linkToOtherParty);
           }
@@ -1876,7 +1876,7 @@ namespace GEDmill.HTMLClasses
           else
           {
             escaped_description = "divorced";
-            if (linkToOtherParty != null && linkToOtherParty != "")
+            if (!string.IsNullOrEmpty(linkToOtherParty))
             {
               escaped_description = String.Concat(escaped_description, " from ", linkToOtherParty);
             }
@@ -1887,7 +1887,7 @@ namespace GEDmill.HTMLClasses
 
         case "DIVF":
           escaped_description = "filing of divorce";
-          if (linkToOtherParty != null && linkToOtherParty != "")
+          if (!string.IsNullOrEmpty(linkToOtherParty))
           {
             escaped_description = String.Concat(escaped_description, " from ", linkToOtherParty);
           }
@@ -1895,7 +1895,7 @@ namespace GEDmill.HTMLClasses
 
         case "ENGA":
           escaped_description = "engagement";
-          if (linkToOtherParty != null && linkToOtherParty != "")
+          if (!string.IsNullOrEmpty(linkToOtherParty))
           {
             escaped_description = String.Concat(escaped_description, " to ", linkToOtherParty);
           }
@@ -1903,7 +1903,7 @@ namespace GEDmill.HTMLClasses
 
         case "MARB":
           escaped_description = "publication of banns of marriage";
-          if (linkToOtherParty != null && linkToOtherParty != "")
+          if (!string.IsNullOrEmpty(linkToOtherParty))
           {
             escaped_description = String.Concat(escaped_description, " to ", linkToOtherParty);
           }
@@ -1926,7 +1926,7 @@ namespace GEDmill.HTMLClasses
 
         case "MARL":
           escaped_description = "licence obtained for marriage";
-          if (linkToOtherParty != null && linkToOtherParty != "")
+          if (!string.IsNullOrEmpty(linkToOtherParty))
           {
             escaped_description = String.Concat(escaped_description, " to ", linkToOtherParty);
           }
@@ -1935,7 +1935,7 @@ namespace GEDmill.HTMLClasses
 
         case "MARS":
           escaped_description = "settlement of marriage";
-          if (linkToOtherParty != null && linkToOtherParty != "")
+          if (!string.IsNullOrEmpty(linkToOtherParty))
           {
             escaped_description = String.Concat(escaped_description, " to ", linkToOtherParty);
           }
@@ -1955,7 +1955,7 @@ namespace GEDmill.HTMLClasses
 
         default:
           escaped_description = "unknown event";
-          if (es.Value != null && es.Value != "")
+          if (!string.IsNullOrEmpty(es.Value))
             escaped_description = String.Concat(escaped_description, " ", EscapeHTML(es.Value, false));
           else
             bNeedValue = true;
@@ -1970,7 +1970,7 @@ namespace GEDmill.HTMLClasses
       if (place != "")
       {
         // It seems some earlier GEDCOM has PLAC value filled with the event value, and the event value blank. Accomodate this:
-        if ((es.Value == null || es.Value == "") && bNeedValue)
+        if (string.IsNullOrEmpty(es.Value) && bNeedValue)
         {
           escaped_description += " " + EscapeHTML(place, false);
           if (utype == "OCCU")
@@ -1984,7 +1984,7 @@ namespace GEDmill.HTMLClasses
         else
         {
           escaped_description += String.Concat(" ", place_word, " ", EscapeHTML(place, false));
-          if (alternative_place != null && alternative_place.Length > 0)
+          if (!string.IsNullOrEmpty(alternative_place))
           {
             escaped_description += String.Concat(" ", alternative_place_word, " ", EscapeHTML(alternative_place, false));
           }
@@ -2038,7 +2038,7 @@ namespace GEDmill.HTMLClasses
         {
           Capitalise(ref cause);
         }
-        if (eventNote.Length > 0)
+        if (!string.IsNullOrEmpty(eventNote))
         {
           eventNote += "\n";
         }
@@ -2052,32 +2052,28 @@ namespace GEDmill.HTMLClasses
         }
       }
 
-      if (es.m_eventDetail != null)
-      {
-        if (es.m_eventDetail.m_alNoteStructures != null)
+        if (es.m_eventDetail != null && es.m_eventDetail.m_alNoteStructures != null)
         {
-          foreach (CNoteStructure ns in es.m_eventDetail.m_alNoteStructures)
-          {
-            if (ns.Text != null && ns.Text.Length > 0)
+            foreach (CNoteStructure ns in es.m_eventDetail.m_alNoteStructures)
             {
-              if (eventNote != "")
-              {
-                eventNote += "\n";
-              }
-              if (MainForm.s_config.m_bObfuscateEmails)
-              {
-                eventNote += ObfuscateEmail(ns.Text);
-              }
-              else
-              {
-                eventNote += ns.Text;
-              }
+                if (string.IsNullOrEmpty(ns.Text))
+                    continue;
+                if (!string.IsNullOrEmpty(eventNote))
+                {
+                    eventNote += "\n";
+                }
+                if (MainForm.s_config.m_bObfuscateEmails)
+                {
+                    eventNote += ObfuscateEmail(ns.Text);
+                }
+                else
+                {
+                    eventNote += ns.Text;
+                }
             }
-          }
         }
-      }
 
-      CIEvent iEvent = null;
+        CIEvent iEvent = null;
 
       if (!bOnlyIncludeIfNotePresent || eventNote != "")
       {

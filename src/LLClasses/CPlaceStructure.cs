@@ -70,6 +70,15 @@ namespace GEDmill.LLClasses
             }
         }
 
+        public static CPlaceStructure Translate(CGedcom gedcom, SharpGEDParser.Model.EventCommon ev)
+        {
+            if (string.IsNullOrEmpty(ev.Place))
+                return null;
+            CPlaceStructure ps = new CPlaceStructure(gedcom);
+            ps.m_sPlaceName = ev.Place;
+            return ps;
+        }
+
         // Parser
         public static CPlaceStructure Parse( CGedcom gedcom, int level )
         {

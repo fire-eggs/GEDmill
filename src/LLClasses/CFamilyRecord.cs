@@ -22,13 +22,13 @@
  *
  */
 
-using System;
 using System.Collections;
+using SharpGEDParser.Model;
 
 namespace GEDmill.LLClasses
 {
     // GEDCOM 'FAM'. See GEDCOM standard for details on GEDCOM data.
-    public class CFamilyRecord : GEDmill.LLClasses.CRecord
+    public class CFamilyRecord : CRecord
     {
         // GEDCOM data
         public string m_sRestrictionNotice;
@@ -46,8 +46,8 @@ namespace GEDmill.LLClasses
         public string m_sStatus; // Family Historian specific: _STAT
 
         // Constructor
-        public CFamilyRecord( CGedcom gedcom ) : base( gedcom )
-        {           
+        public CFamilyRecord(CGedcom gedcom) : base(gedcom)
+        {
             m_alFamilyEventStructures = new ArrayList();
             m_alXrefsChildren = new ArrayList();
             m_alXrefSubms = new ArrayList();
@@ -57,7 +57,37 @@ namespace GEDmill.LLClasses
             m_alMultimediaLinks = new ArrayList();
         }
 
-        // Parser
+        public FamRecord YAGP { get; set; }
+
+        public static CFamilyRecord Translate(CGedcom gedcom, FamRecord yagp)
+        {
+            CFamilyRecord fr = new CFamilyRecord(gedcom);
+            fr.m_xref = yagp.Ident;
+            fr.YAGP = yagp;
+
+            if (yagp.Dads.Count > 0)
+                fr.m_xrefHusband = yagp.Dads[0];
+            if (yagp.Moms.Count > 0)
+                fr.m_xrefWife = yagp.Moms[0];
+            for (int i = 0; i < yagp.Childs.Count; i++)
+                fr.m_alXrefsChildren.Add(new CChildXref(i, yagp.Childs[i].Xref));
+
+            foreach (var familyEvent in yagp.FamEvents)
+            {
+                CFamilyEventStructure fes = CFamilyEventStructure.Translate(gedcom, familyEvent);
+                fr.m_alFamilyEventStructures.Add(fes);
+            }
+
+            foreach (var note in yagp.Notes)
+            {
+                var ns = CNoteStructure.Translate(gedcom, note);
+                fr.m_alNoteStructures.Add(ns);
+            }
+
+            return fr;
+        }
+
+    // Parser
         public static CFamilyRecord Parse( CGedcom gedcom, int nLevel )
         {
             CGedcomLine gedcomLine;

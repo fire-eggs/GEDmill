@@ -47,7 +47,6 @@ namespace GEDmill
     {
         // Stores and parses data from GEDCOM files
         private CGedcom m_gedcom;
-        private GedParser m_yagp;
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Event handlers /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -379,7 +378,7 @@ namespace GEDmill
             bool bWarnOfDifferences = false;
             m_bDisablePrunepanelCheckEvent = true;
 
-            foreach (CIndividualRecord ir in m_gedcom.m_alIndividualRecords)
+            foreach (CIndividualRecord ir in m_gedcom.IndividualRecords)
             {
                 bool bRestricted = true;
 
@@ -407,7 +406,7 @@ namespace GEDmill
             }
 
 
-            foreach (CSourceRecord sr in m_gedcom.m_alSourceRecords)
+            foreach (CSourceRecord sr in m_gedcom.SourceRecords)
             {
                 // Earlier versions don't restrict sources at all
                 bool bRestricted = false; 
@@ -2401,7 +2400,6 @@ namespace GEDmill
                         }
 
                         m_gedcom = new CGedcom();
-                        m_yagp = new GedParser(InputFile);
 
                         m_gedcom.Filename = InputFile;
                         m_gedcom.DataMayStartWithWhitespace = s_config.m_bDataMayStartWithWhitespace;
@@ -2545,7 +2543,7 @@ namespace GEDmill
         // alSelectedIndividuals is a small array indicating xrefs of those individuals to mark selected. (not currently used, 3Jan08)
         private void FillIndividualsList(SortableListView listView, bool bExcludeRestricted, ArrayList alSelectedIndividuals, bool bFirstColumnIsCheckbox)
         {
-            LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "FillIndividualsList() : " + m_gedcom.m_alIndividualRecords.Count);
+            LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "FillIndividualsList() : " + m_gedcom.CountIndividuals);
 
             m_bDisablePrunepanelCheckEvent = true;
 
@@ -2569,10 +2567,10 @@ namespace GEDmill
             listView.Columns.Add("Pics", 48, HorizontalAlignment.Left);
 
             // Build an array first then blit the whole array to the list control. This is faster than adding each item to the list control individually.
-            ListViewItem[] temporaryItemsList = new ListViewItem[m_gedcom.m_alIndividualRecords.Count];
+            ListViewItem[] temporaryItemsList = new ListViewItem[m_gedcom.CountIndividuals];
 
             int nItem = 0;
-            foreach (CIndividualRecord ir in m_gedcom.m_alIndividualRecords)
+            foreach (CIndividualRecord ir in m_gedcom.IndividualRecords)
             {
                 // Only allow fully unrestricted individuals.
                 if (bExcludeRestricted && ir.Visibility() != CIndividualRecord.EVisibility.Visible) 
@@ -2682,7 +2680,7 @@ namespace GEDmill
         // Populates the list of source records for inclusion/exclusion in the website
         private void FillSourcesList(SortableListView listView, bool bFirstColumnIsCheckbox)
         {
-            LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "FillSourcesList() : " + m_gedcom.m_alSourceRecords.Count);
+            LogFile.TheLogFile.WriteLine(LogFile.DT_APP, LogFile.EDebugLevel.Note, "FillSourcesList() : " + m_gedcom.CountSources);
 
             m_bDisablePrunepanelCheckEvent = true; // call to item.Checked below invokes event handler.
 
@@ -2707,9 +2705,9 @@ namespace GEDmill
             listView.Columns.Add("Id", 60, HorizontalAlignment.Left);
             listView.Columns.Add("Pics", 48, HorizontalAlignment.Left);
 
-            ListViewItem[] temporaryItemsList = new ListViewItem[m_gedcom.m_alSourceRecords.Count];
+            ListViewItem[] temporaryItemsList = new ListViewItem[m_gedcom.CountSources];
             int nItem = 0;
-            foreach (CSourceRecord sr in m_gedcom.m_alSourceRecords)
+            foreach (CSourceRecord sr in m_gedcom.SourceRecords)
             {
                 CListableBool item = new CListableBool(sr, bFirstColumnIsCheckbox);
                 SetSourceSubItems(item, sr, bFirstColumnIsCheckbox);

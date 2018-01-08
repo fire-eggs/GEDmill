@@ -23,10 +23,14 @@
  */
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Collections;
+using System.Text;
 using GEDmill.LLClasses;
 using System.Threading;
+using SharpGEDParser;
+using SharpGEDParser.Model;
 
 // ReSharper disable LoopCanBeConvertedToQuery
 // ReSharper disable InconsistentNaming
@@ -98,13 +102,16 @@ namespace GEDmill
         public CHeader m_header;
         public CSubmissionRecord m_submissionRecord;
         public ArrayList m_alFamilyRecords;
-        public ArrayList m_alIndividualRecords;
+//        public ArrayList m_alIndividualRecords;
         public ArrayList m_alMultimediaRecords;
         public ArrayList m_alNoteRecords;
         public ArrayList m_alRepositoryRecords;     
-        public ArrayList m_alSourceRecords;
+//        public ArrayList m_alSourceRecords;
         public ArrayList m_alSubmitterRecords;
         public ArrayList m_alAdoptedIndividuals;
+
+        public List<CIndividualRecord> IndividualRecords { get; set; }
+        public List<CSourceRecord> SourceRecords { get; set; }
 
         // Which character set the file uses
         private ECharset m_ecCharset;
@@ -155,12 +162,14 @@ namespace GEDmill
             m_nLineIndex = 0;
             m_alFamilyRecords = new ArrayList();
             m_htFamilyRecordsXref = new Hashtable(); 
-            m_alIndividualRecords = new ArrayList();
+
+            IndividualRecords = new List<CIndividualRecord>();
+            SourceRecords = new List<CSourceRecord>();
+
             m_htIndividualRecordsXref = new Hashtable();
             m_alMultimediaRecords = new ArrayList();
             m_alNoteRecords = new ArrayList();
             m_alRepositoryRecords = new ArrayList();
-            m_alSourceRecords = new ArrayList();
             m_htSourceRecordsXref = new Hashtable();
             m_alSubmitterRecords = new ArrayList();
             m_header = null;
@@ -170,21 +179,76 @@ namespace GEDmill
 
         }
 
+        private void addIndi(IndiRecord yagpIndi)
+        {
+            CIndividualRecord cir = CIndividualRecord.Translate(this, yagpIndi);
+            IndividualRecords.Add(cir);
+            m_htIndividualRecordsXref.Add(cir.m_xref, cir);
+        }
+
+        private void addFam(FamRecord yagpFam)
+        {
+            CFamilyRecord cfr = CFamilyRecord.Translate(this, yagpFam);
+            m_alFamilyRecords.Add(cfr);
+            m_htFamilyRecordsXref.Add(cfr.m_xref, cfr);
+        }
+
+        private void addSource(SourceRecord yagpSour)
+        {
+            CSourceRecord cir = CSourceRecord.Translate(this, yagpSour);
+            SourceRecords.Add(cir);
+        }
+
+        private void Translate()
+        {
+            foreach (var gedCommon in _yagp.Data)
+            {
+                if (gedCommon is IndiRecord)
+                {
+                    addIndi(gedCommon as IndiRecord);
+                }
+                else if (gedCommon is FamRecord)
+                {
+                    addFam(gedCommon as FamRecord);
+                }
+                else if (gedCommon is SourceRecord)
+                {
+                    addSource(gedCommon as SourceRecord);
+                }
+            }
+            AddChildrenToFamilies();
+        }
+
+        private FileRead _yagp;
 
         // Reads a GEDCOM file into a hierarchy of data structures
         public void ParseFile()
         {
-            LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note,  "ParseFile()" ); 
+            LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note,  "ParseFile()" );
 
-            CThreadError threaderror = new CThreadError( 1, "No error" ); // 2 = process was aborted, for signalling back to calling thread. 1= cancelled by user action
-            m_nLineIndex = -1; // Used to indicate to exception handling that stage2 parsing hasn't started
-
-            FileStream fileStream = null;
-            StreamReader streamReader = null;
-
+            CThreadError threaderror = new CThreadError(4, "No error"); // 2 = process was aborted, for signalling back to calling thread. 1= cancelled by user action
             ClearOutParser();
             LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "ParseFile() ClearOutParser" ); 
+
+            _yagp = new FileRead();
+            _yagp.ReadGed(m_sFilename);
+            LogFile.TheLogFile.WriteLine(LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "YAGP read complete");
+            Translate();
+            LogFile.TheLogFile.WriteLine(LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "YAGP translate complete");
+
+            if (m_progressWindow != null)
+            {
+                LogFile.TheLogFile.WriteLine(LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "Closing progress window");
+                m_progressWindow.End(threaderror);
+            }
+
+            LogFile.TheLogFile.WriteLine(LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "All done.");
+
+#if false
             string sParseLine="";
+            FileStream fileStream = null;
+            StreamReader streamReader = null;
+            m_nLineIndex = -1; // Used to indicate to exception handling that stage2 parsing hasn't started
 
             try
             {
@@ -589,7 +653,7 @@ namespace GEDmill
                 }
 
                 LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "Linking indi backreferences." );
-                foreach( CIndividualRecord brir in m_alIndividualRecords )
+                foreach( CIndividualRecord brir in IndividualRecords )
                 {
                     foreach( CIndividualEventStructure ies in brir.m_alIndividualEventStructures )
                     {
@@ -676,24 +740,24 @@ namespace GEDmill
                 // Join together fragmented multimedia files
                 LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "Joining multimedia fragments." );
                 // Go through all the MFRs in every link in every record.
-                foreach( CSourceRecord isr in m_alSourceRecords )
+                foreach( CSourceRecord isr in SourceRecords )
                 {
                     JoinMultimedia( isr.m_alMultimediaLinks );
                 }
-                foreach( CIndividualRecord iir in m_alIndividualRecords )
+                foreach( CIndividualRecord iir in IndividualRecords )
                 {
                     JoinMultimedia( iir.m_alMultimediaLinks );
                 }
 
                 // Create a list of MFRs unique to the individual
                 LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "Ordering individual's mfrs." );
-                foreach( CIndividualRecord irMultimedia in m_alIndividualRecords )
+                foreach( CIndividualRecord irMultimedia in IndividualRecords )
                 {
                     ConvertMultimediaLinks( irMultimedia.m_alMultimediaLinks, ref irMultimedia.m_alUniqueFileRefs );
                 }
                 // Create a list of MFRs unique to the source
                 LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "Ordering source's mfrs." );
-                foreach( CSourceRecord srMultimedia in m_alSourceRecords )
+                foreach( CSourceRecord srMultimedia in SourceRecords )
                 {
                     ConvertMultimediaLinks( srMultimedia.m_alMultimediaLinks, ref srMultimedia.m_alUniqueFileRefs );
                 }
@@ -780,6 +844,7 @@ namespace GEDmill
                 m_alLines.Clear(); 
             }
             LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "All done." );
+#endif
         }
 
         // Join together fragmented multimedia files
@@ -1685,7 +1750,7 @@ namespace GEDmill
                 return (CIndividualRecord)m_htIndividualRecordsXref[ xref ];
             }
 
-            foreach( CIndividualRecord ir in m_alIndividualRecords )
+            foreach( CIndividualRecord ir in IndividualRecords )
             {
                 if (ir.m_xref == xref)
                 {
@@ -1708,7 +1773,7 @@ namespace GEDmill
                 return (CSourceRecord)m_htSourceRecordsXref[ xref ];
             }
 
-            foreach( CSourceRecord sr in m_alSourceRecords )
+            foreach( CSourceRecord sr in SourceRecords )
             {
                 if (sr.m_xref == xref)
                 {
@@ -1818,7 +1883,7 @@ namespace GEDmill
         {
             get
             {
-                return m_alIndividualRecords.Count;
+                return IndividualRecords.Count;
             }
         }
 
@@ -1827,14 +1892,14 @@ namespace GEDmill
         {
             get
             {
-                return m_alSourceRecords.Count;
+                return SourceRecords.Count;
             }
         }
 
         // Returns the xref string for the first individual in the gedcom that isn't set as restricted.
         public CIndividualRecord FirstUnrestrictedIndividual()
         {
-            foreach( CIndividualRecord ir in m_alIndividualRecords )
+            foreach( CIndividualRecord ir in IndividualRecords )
             {
                 if (ir.Visibility() == CIndividualRecord.EVisibility.Visible)
                 {
@@ -2228,7 +2293,7 @@ namespace GEDmill
         // Exclude all individuals unless marked as visited
         public void PruneUnmarked()
         {
-            foreach( CIndividualRecord ir in m_alIndividualRecords )
+            foreach( CIndividualRecord ir in IndividualRecords )
             {
                 if( !m_htVisited.ContainsKey( ir.m_xref ) )
                 {

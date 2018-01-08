@@ -143,7 +143,7 @@ namespace GEDmill.HTMLClasses
 
         // Create the pages for the individual records.
         m_progressWindow.SetText("Creating individual pages");
-        foreach (CIndividualRecord ir in m_gedcom.m_alIndividualRecords)
+        foreach (CIndividualRecord ir in m_gedcom.IndividualRecords)
         {         
           CCreatorRecordIndividual ipc = new CCreatorRecordIndividual( m_gedcom, m_progressWindow, sW3CFilename, ir, indiIndexCreator, paintbox );        
           if (ipc.Create( stats ))
@@ -174,7 +174,7 @@ namespace GEDmill.HTMLClasses
 
         // Create the pages for the source records.
         m_progressWindow.SetText( "Creating source pages" );
-        foreach( CSourceRecord sr in m_gedcom.m_alSourceRecords )
+        foreach( CSourceRecord sr in m_gedcom.SourceRecords )
         {
           if( sr != null && sr.ContainsAnyInformation() )
           {

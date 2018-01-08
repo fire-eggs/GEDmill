@@ -23,6 +23,7 @@
  */
 
 using System;
+using SharpGEDParser.Model;
 
 namespace GEDmill.LLClasses
 {
@@ -44,6 +45,18 @@ namespace GEDmill.LLClasses
         // Constructor
         public CFamilyEventStructure( CGedcom gedcom ) : base( gedcom )
         {
+        }
+
+        public static CFamilyEventStructure Translate(CGedcom gedcom, FamilyEvent yagp)
+        {
+            CFamilyEventStructure fes = new CFamilyEventStructure(gedcom);
+            fes.Type = yagp.Tag;
+            fes.Value = yagp.Descriptor;
+            
+            fes.m_eventDetail = CEventDetail.Translate(gedcom, yagp);
+
+            fes.m_sSubtype = ""; // TODO when does FAM.<event>.TYPE occur?
+            return fes;
         }
 
         // Parser
