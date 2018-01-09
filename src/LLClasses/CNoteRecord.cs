@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections;
+using SharpGEDParser.Model;
 
 namespace GEDmill.LLClasses
 {
@@ -111,6 +112,14 @@ namespace GEDmill.LLClasses
             }
             while( !bParsingFinished );
 
+            return nr;
+        }
+
+        public static CNoteRecord Translate(CGedcom gedcom, NoteRecord yagpNote)
+        {
+            CNoteRecord nr = new CNoteRecord(gedcom);
+            nr.m_xref = yagpNote.Ident;
+            nr.m_sSubmitterText = yagpNote.Text;
             return nr;
         }
     }

@@ -78,10 +78,10 @@ namespace GEDmill
         private int m_nLineIndex;
 
         // Count of bytes read
-        private long m_nBytesRead;
+//        private long m_nBytesRead;
 
         // Count of bytes in total
-        private long m_nBytesTotal;
+//        private long m_nBytesTotal;
 
         // For decoding BLOBs
         private Hashtable m_htDecoding;
@@ -114,7 +114,7 @@ namespace GEDmill
         public List<CSourceRecord> SourceRecords { get; set; }
 
         // Which character set the file uses
-        private ECharset m_ecCharset;
+//        private ECharset m_ecCharset;
 
         // Constructor
         public CGedcom()
@@ -157,8 +157,8 @@ namespace GEDmill
         private void ClearOutParser()
         {
             m_alLines = new ArrayList();
-            m_nBytesRead = 0;
-            m_nBytesTotal = 0;
+//            m_nBytesRead = 0;
+//            m_nBytesTotal = 0;
             m_nLineIndex = 0;
             m_alFamilyRecords = new ArrayList();
             m_htFamilyRecordsXref = new Hashtable(); 
@@ -175,7 +175,7 @@ namespace GEDmill
             m_header = null;
             m_submissionRecord = null;
             m_bDataMayStartWithWhitespace = true;
-            m_ecCharset = ECharset.Unknown8bit;
+//            m_ecCharset = ECharset.Unknown8bit;
 
         }
 
@@ -199,6 +199,12 @@ namespace GEDmill
             SourceRecords.Add(cir);
         }
 
+        private void addNote(NoteRecord yagpNote)
+        {
+            CNoteRecord nr = CNoteRecord.Translate(this, yagpNote);
+            m_alNoteRecords.Add(nr);
+        }
+
         private void Translate()
         {
             foreach (var gedCommon in _yagp.Data)
@@ -214,6 +220,10 @@ namespace GEDmill
                 else if (gedCommon is SourceRecord)
                 {
                     addSource(gedCommon as SourceRecord);
+                }
+                else if (gedCommon is NoteRecord)
+                {
+                    addNote(gedCommon as NoteRecord);
                 }
             }
             AddChildrenToFamilies();
@@ -1697,6 +1707,7 @@ namespace GEDmill
             m_nLineIndex += nIncrementAmount;
         }
 
+        // KBR TODO use hash for all records by xref
         // Returns the note record with the given xref id.
         public CNoteRecord GetNoteRecord(string xref)
         {
