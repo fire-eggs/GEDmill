@@ -98,7 +98,10 @@ namespace GEDmill.LLClasses
                     {
                         if (tuple.Item1 == "NPFX")
                             pnp.m_sNamePiecePrefix = tuple.Item2;
-                        // TODO nick, suffix
+                        else if (tuple.Item1 == "NICK")
+                            pnp.m_sNamePieceNickname = tuple.Item2;
+                        else if (tuple.Item1 == "SPFX")
+                            pnp.m_sNamePieceSuffix = tuple.Item2;
                     }
                     pns.m_personalNamePieces = pnp;
                 }
