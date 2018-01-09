@@ -22,7 +22,6 @@
  *
  */
 
-using System;
 using System.Collections;
 using SharpGEDParser.Model;
 
@@ -44,7 +43,7 @@ namespace GEDmill.LLClasses
 
         public static CNoteStructure Translate(CGedcom gedcom, Note yagp)
         {
-            // TODO who has _ASID and _AREA
+            // TODO who has _ASID and _AREA [see notestructureinline]
             if (string.IsNullOrEmpty(yagp.Xref))
             {
                 var ns = new CNoteStructureInLine(gedcom);

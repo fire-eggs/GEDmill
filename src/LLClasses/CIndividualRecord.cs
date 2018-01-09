@@ -89,10 +89,29 @@ namespace GEDmill.LLClasses
                 if (!string.IsNullOrEmpty(nameRec.Names))
                     pns.m_sNamePersonal = nameRec.Names + " ";
                 pns.m_sNamePersonal += "/" + nameRec.Surname + "/";
+
+
+                if (nameRec.Parts.Count > 0)
+                {
+                    CPersonalNamePieces pnp = new CPersonalNamePieces(gedcom);
+                    foreach (var tuple in nameRec.Parts)
+                    {
+                        if (tuple.Item1 == "NPFX")
+                            pnp.m_sNamePiecePrefix = tuple.Item2;
+                        // TODO nick, suffix
+                    }
+                    pns.m_personalNamePieces = pnp;
+                }
+
                 ir.m_alPersonalNameStructures.Add(pns);
             }
 
             foreach (var indiEvent in yagpIndi.Events)
+            {
+                CIndividualEventStructure ies = CIndividualEventStructure.Translate(gedcom, indiEvent);
+                ir.m_alIndividualEventStructures.Add(ies);
+            }
+            foreach (var indiEvent in yagpIndi.Attribs)
             {
                 CIndividualEventStructure ies = CIndividualEventStructure.Translate(gedcom, indiEvent);
                 ir.m_alIndividualEventStructures.Add(ies);

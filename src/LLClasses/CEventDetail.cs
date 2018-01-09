@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections;
+using SharpGEDParser.Model;
 
 // ReSharper disable InconsistentNaming
 // ReSharper disable StringCompareToIsCultureSpecific
@@ -101,20 +102,14 @@ namespace GEDmill.LLClasses
             m_sAlternativePlace = ed.m_sAlternativePlace;
         }
 
-        public static CEventDetail Translate(CGedcom gedcom, SharpGEDParser.Model.IndiEvent ev)
+        public static CEventDetail Translate(CGedcom gedcom, EventCommon ev)
         {
             CEventDetail ed = new CEventDetail(gedcom);
             ed.Type = ev.Tag;
-            ed.m_dateValue = CPGDate.Parse(ev.Date);
+            if (!string.IsNullOrEmpty(ev.Date))
+                ed.m_dateValue = CPGDate.Parse(ev.Date.Trim());
             ed.m_placeStructure = CPlaceStructure.Translate(gedcom, ev);
-            return ed;
-        }
-        public static CEventDetail Translate(CGedcom gedcom, SharpGEDParser.Model.FamilyEvent ev)
-        {
-            CEventDetail ed = new CEventDetail(gedcom);
-            ed.Type = ev.Tag;
-            ed.m_dateValue = CPGDate.Parse(ev.Date);
-            ed.m_placeStructure = CPlaceStructure.Translate(gedcom, ev);
+            ed.m_sCauseOfEvent = ev.Cause;
             return ed;
         }
 
