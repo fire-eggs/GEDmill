@@ -78,13 +78,19 @@ namespace GEDmill.LLClasses
 
         public static CIndividualRecord Translate(CGedcom gedcom, IndiRecord yagpIndi)
         {
+            // KBR TODO need to have CRecord.Translate for RIN/REFN/etc?
+
             CIndividualRecord ir = new CIndividualRecord(gedcom);
             ir.m_xref = yagpIndi.Ident;
             ir.m_sSexValue = yagpIndi.FullSex;
             ir.YAGP = yagpIndi;
 
+            ir.m_sAutomatedRecordId = yagpIndi.RIN;
+
             foreach (var nameRec in yagpIndi.Names)
             {
+                // KBR TODO move to CPersonalNameStructure.Translate
+
                 CPersonalNameStructure pns = new CPersonalNameStructure(gedcom);
                 if (!string.IsNullOrEmpty(nameRec.Names))
                     pns.m_sNamePersonal = nameRec.Names + " ";
@@ -96,12 +102,21 @@ namespace GEDmill.LLClasses
                     CPersonalNamePieces pnp = new CPersonalNamePieces(gedcom);
                     foreach (var tuple in nameRec.Parts)
                     {
-                        if (tuple.Item1 == "NPFX")
-                            pnp.m_sNamePiecePrefix = tuple.Item2;
-                        else if (tuple.Item1 == "NICK")
-                            pnp.m_sNamePieceNickname = tuple.Item2;
-                        else if (tuple.Item1 == "SPFX")
-                            pnp.m_sNamePieceSuffix = tuple.Item2;
+                        switch (tuple.Item1)
+                        {
+                            case "NPFX":
+                                pnp.m_sNamePiecePrefix = tuple.Item2;
+                                break;
+                            case "NICK":
+                                pnp.m_sNamePieceNickname = tuple.Item2;
+                                break;
+                            case "NSFX":
+                                pnp.m_sNamePieceSuffix = tuple.Item2;
+                                break;
+                            case "SPFX":
+                                pnp.m_sNamePieceSurnamePrefix = tuple.Item2;
+                                break;
+                        }
                     }
                     pns.m_personalNamePieces = pnp;
                 }
@@ -128,15 +143,15 @@ namespace GEDmill.LLClasses
                     cfl.m_xrefFam = indiLink.Xref;
                     cfl.m_sPedigreeLinkageType = indiLink.Pedi;
                     cfl.m_sChildLinkageStatus = indiLink.Stat;
-                    // TODO notes
                     ir.m_alChildToFamilyLinks.Add(cfl);
+                    // NOTE: html output doesn't appear to use NOTEs from here
                 }
                 else if (indiLink.Tag == "FAMS")
                 {
                     CSpouseToFamilyLink sfl = new CSpouseToFamilyLink(gedcom);
                     sfl.m_xrefFam = indiLink.Xref;
-                    // TODO notes
                     ir.m_alSpouseToFamilyLinks.Add( sfl );
+                    // NOTE: html output doesn't appear to use NOTEs from here
                 }
 
             }

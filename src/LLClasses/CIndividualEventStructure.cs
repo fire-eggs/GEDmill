@@ -23,6 +23,7 @@
  */
 
 using System;
+using System.Collections;
 using SharpGEDParser.Model;
 
 // ReSharper disable UseObjectOrCollectionInitializer
@@ -52,6 +53,8 @@ namespace GEDmill.LLClasses
             ies.Type = indiEvent.Tag;
             ies.Value = indiEvent.Descriptor;
 
+            // TODO move to CEventDetail.translate
+            ies.m_eventDetail.m_alNoteStructures = new ArrayList();
             foreach (var note in indiEvent.Notes)
             {
                 CNoteStructure ns = CNoteStructure.Translate(gedcom, note);
