@@ -96,6 +96,12 @@ namespace GEDmill.LLClasses
                     pns.m_sNamePersonal = nameRec.Names + " ";
                 pns.m_sNamePersonal += "/" + nameRec.Surname + "/";
 
+                // KBR TODO not yet supported by YAGP
+                //foreach (var sourceCit in nameRec.Cits)
+                //{
+                //    CSourceCitation sc = CSourceCitation.Translate(gedcom, sourceCit);
+                //    pns.m_alSourceCitations.Add(sc);
+                //}
 
                 if (nameRec.Parts.Count > 0)
                 {

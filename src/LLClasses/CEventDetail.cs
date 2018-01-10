@@ -111,6 +111,7 @@ namespace GEDmill.LLClasses
             if (!string.IsNullOrEmpty(ev.Date))
                 ed.m_dateValue = CPGDate.Parse(ev.Date.Trim());
             ed.m_placeStructure = CPlaceStructure.Translate(gedcom, ev);
+            ed.m_addressStructure = CAddressStructure.Translate(gedcom, ev.Address);
             ed.m_sCauseOfEvent = ev.Cause;
 
             foreach (var sourceCit in ev.Cits)

@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections;
+using SharpGEDParser.Model;
 
 namespace GEDmill.LLClasses
 {
@@ -217,7 +218,7 @@ namespace GEDmill.LLClasses
         // Accessor
         public string GetUrl()
         {
-            if( m_alAddressWebPages.Count > 0 )
+            if (m_alAddressWebPages != null && m_alAddressWebPages.Count > 0)
             {
                 return (string)m_alAddressWebPages[0];
             }
@@ -232,7 +233,7 @@ namespace GEDmill.LLClasses
             {
                 sResult += m_sAddressLine;
             }
-            if( m_sAddressLine1.Length > 0 )
+            if( !string.IsNullOrEmpty(m_sAddressLine1) )
             {
                 if( sResult.Length > 0 )
                 {
@@ -240,7 +241,7 @@ namespace GEDmill.LLClasses
                 }
                 sResult += m_sAddressLine1;
             }
-            if( m_sAddressLine2.Length > 0 )
+            if( !string.IsNullOrEmpty(m_sAddressLine2) )
             {
                 if( sResult.Length > 0 )
                 {
@@ -248,7 +249,7 @@ namespace GEDmill.LLClasses
                 }
                 sResult += m_sAddressLine2;
             }
-            if( m_sAddressLine3.Length > 0 )
+            if( !string.IsNullOrEmpty(m_sAddressLine3) )
             {
                 if( sResult.Length > 0 )
                 {
@@ -256,7 +257,7 @@ namespace GEDmill.LLClasses
                 }
                 sResult += m_sAddressLine3;
             }
-            if( m_sAddressCity.Length > 0 )
+            if( !string.IsNullOrEmpty(m_sAddressCity) )
             {
                 if( sResult.Length > 0 )
                 {
@@ -264,7 +265,7 @@ namespace GEDmill.LLClasses
                 }
                 sResult += m_sAddressCity;
             }
-            if( m_sAddressState.Length > 0 )
+            if( !string.IsNullOrEmpty(m_sAddressState) )
             {
                 if( sResult.Length > 0 )
                 {
@@ -272,7 +273,7 @@ namespace GEDmill.LLClasses
                 }
                 sResult += m_sAddressState;
             }
-            if( m_sAddressPostalCode.Length > 0 )
+            if( !string.IsNullOrEmpty(m_sAddressPostalCode) )
             {
                 if( sResult.Length > 0 )
                 {
@@ -280,7 +281,7 @@ namespace GEDmill.LLClasses
                 }
                 sResult += m_sAddressPostalCode;
             }
-            if( m_sAddressCountry.Length > 0 )
+            if( !string.IsNullOrEmpty(m_sAddressCountry) )
             {
                 if( sResult.Length > 0 )
                 {
@@ -290,6 +291,29 @@ namespace GEDmill.LLClasses
             }
             
             return( sResult );
+        }
+
+        public static CAddressStructure Translate(CGedcom gedcom, Address yagp)
+        {
+            if (yagp == null)
+                return null;
+
+            CAddressStructure ads = new CAddressStructure(gedcom);
+            ads.m_sAddressLine = yagp.Adr;
+            ads.m_sAddressLine1 = yagp.Adr1;
+            ads.m_sAddressLine2 = yagp.Adr2;
+            ads.m_sAddressLine3 = yagp.Adr3;
+            ads.m_sAddressCity = yagp.City;
+            ads.m_sAddressState = yagp.Stae;
+            ads.m_sAddressPostalCode = yagp.Post;
+            ads.m_sAddressCountry = yagp.Ctry;
+
+            // KBR TODO ?
+            //ads.m_alPhoneNumbers = alPhoneNumbers;
+            //ads.m_alAddressEmails = alAddressEmails;
+            //ads.m_alAddressFaxes = alAddressFaxes;
+            //ads.m_alAddressWebPages = alAddressWebPages;
+            return ads;
         }
     }
 }

@@ -24,7 +24,6 @@
 
 using System;
 using System.Collections;
-using GEDmill.HTMLClasses;
 using SharpGEDParser.Model;
 
 namespace GEDmill.LLClasses
