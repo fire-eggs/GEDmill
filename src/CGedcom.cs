@@ -186,12 +186,25 @@ namespace GEDmill
         {
             CSourceRecord cir = CSourceRecord.Translate(this, yagpSour);
             SourceRecords.Add(cir);
+            m_htSourceRecordsXref.Add(cir.m_xref, cir);
         }
 
         private void addNote(NoteRecord yagpNote)
         {
             CNoteRecord nr = CNoteRecord.Translate(this, yagpNote);
             m_alNoteRecords.Add(nr);
+        }
+
+        private void addRepo(Repository yagp)
+        {
+            CRepositoryRecord rr = CRepositoryRecord.Translate(this, yagp);
+            m_alRepositoryRecords.Add(rr);
+        }
+
+        private void addMedia(MediaRecord yagp)
+        {
+            CMultimediaRecord mr = CMultimediaRecord.Translate(this, yagp);
+            m_alMultimediaRecords.Add(mr);
         }
 
         private void Translate()
@@ -213,6 +226,14 @@ namespace GEDmill
                 else if (gedCommon is NoteRecord)
                 {
                     addNote(gedCommon as NoteRecord);
+                }
+                else if (gedCommon is Repository)
+                {
+                    addRepo(gedCommon as Repository);
+                }
+                else if (gedCommon is MediaRecord)
+                {
+                    addMedia(gedCommon as MediaRecord);
                 }
             }
             AddChildrenToFamilies();
@@ -903,59 +924,6 @@ namespace GEDmill
             }
         }
 
-        // Parses a line of a GEDCOM file
-        private CGedcomLine ParseLine(string sLine, uint uLineInFile)
-        {
-            // Strip leading whitespace
-            ParseWhitespace( ref sLine );
-            if(  sLine == null || sLine.Length == 0 )
-            {
-                // Line is empty, on to next gedcomLine
-                return null;
-            }
-
-            int nLevel = ParseLevel( ref sLine );
-
-            ParseWhitespace( ref sLine );
-            // May return null but that's ok.
-            string xref = ParsePointer( ref sLine ); 
-
-            ParseWhitespace( ref sLine );
-            // May return null, indicates illegal missing tag.
-            string sTag = ParseTag( ref sLine ); 
-
-            if( DataMayStartWithWhitespace )
-            {
-                if( sLine != null && sLine.Length > 0 && sLine[0] == ' ' )
-                {
-                    sLine = sLine.Substring( 1 );
-                }
-            }
-            else
-            {
-                ParseWhitespace( ref sLine );
-            }
-
-            CGedcomLine gedcomLine = null;
-            if( sLine !=  null )
-            {
-                // Parse line_value which is [pointer | line_item]
-                string sLineItem = null;
-                string sLinePointer = ParsePointer( ref sLine );
-                if( sLinePointer == null )
-                {
-                    sLineItem = ParseLineItem( ref sLine );
-                    if( DataMayEndWithWhitespace == false )
-                    {
-                        StripTrailingWhitespace( ref sLineItem );
-                    }
-                }
-        
-                gedcomLine = new CGedcomLine( nLevel, xref, sTag, sLineItem, sLinePointer, uLineInFile );
-            }
-            return gedcomLine;
-        }
-
         // Removes trailing whitespace
         public static void StripTrailingWhitespace( ref string sText )
         {
@@ -1035,197 +1003,6 @@ namespace GEDmill
             sText = sTemp.Substring( i );
             return nSign * nVal;
         }
-
-        // Parses a GEDCOM nLevel number from text
-        private int ParseLevel(ref string sText)
-        {
-            // Adjust text to start with next non digit character
-            int i = 0;
-            while( i < sText.Length && Char.IsDigit( sText[i] ) )
-            {
-                ++i;
-            }
-
-            if( i == 0 )
-            {
-                // No nLevel number found
-                throw new CParsingException( "No level number found" );
-            }
-
-            int nLevel;
-
-            try 
-            {
-                nLevel = Int32.Parse( sText.Substring( 0, i ) );
-                sText = sText.Substring( i );
-            }
-            catch( FormatException )
-            {
-                throw new CParsingException( "Level format error" );
-            }
-            return nLevel;
-        }
-
-        // Parses a GEDCOM Cross Reference ID. Returns null if no ID found
-        private string ParsePointer(ref string sText)
-        {
-            if (sText == null || sText.Length == 0)
-            {
-                return null;
-            }
-
-            int i = 0;
-
-            // Look for starting '@' character
-            if( sText[i++] != '@' )
-            { 
-                // No '@' found.
-                return null;
-            }
-
-            // Treat @#references@ as lineItems
-            if (sText[i] == '#')
-            {
-                return null;
-            }
-
-            int nStart = i;
-
-            // Look for ending '@' character
-            while( sText[i] != '@' )
-            {
-                ++i;
-                if( i == sText.Length )
-                {
-                    // No ending '@' found
-                    return null;
-                }
-            }
-
-            string xref = sText.Substring( nStart, i-nStart );
-            sText = sText.Substring( i+1 );
-            return xref;            
-        }
-
-        // Parses a GEDCOM tag field. Returns null if no tag found.
-        private string ParseTag(ref string sText)
-        {
-            if (sText == null || sText.Length == 0)
-            {
-                return null;
-            }
-
-            int i = 0;
-            // Parse until non alphanumeric
-            while( Char.IsLetterOrDigit( sText[i] ) || sText[i]=='_' )
-            {
-                ++i;
-                if( i == sText.Length ) 
-                {
-                    // Text was all alphanumeric
-                    break;
-                }
-            }
-            
-            string sTag;
-            sTag = sText.Substring( 0, i );
-            sText = sText.Substring( i );
-            return sTag;                
-        }
-
-        // Parses a GEDCOM gedcomLine item
-        private string ParseLineItem(ref string sText)
-        {
-            // line_item ::= [any_char | escape | line_item + any_char | line_item + escape]
-            // any_char:= [alpha | digit | otherchar | (0x23) | (0x20) | (0x40)+(0x40) ]
-            // where:
-            // (0x23)=#
-            // (0x20)=space character
-            // (0x40)+(0x40)=@@
-            // otherchar ::= Any 8-bit ASCII character except control characters (0x00–0x1F), alphanum, space ( ), number sign (#), at sign (@), _ underscore, and the DEL character (0x7F).
-            // escape:= [(0x40) + (0x23) + escape_text + (0x40) + non_at ] 
-            // where:
-            // (0x40)=@
-            // (0x23)=#
-
-            if (sText == null)
-            {
-                return null;
-            }
-
-            int nEscapeState = 0;
-
-            StringBuilder sbConvertedText = new StringBuilder( sText.Length );
-            StringBuilder sbEscapeString = null;
-
-            foreach( char c in sText )
-            {
-                if( nEscapeState == 0 && c == '@' )
-                {
-                    nEscapeState = 1;
-                }
-                else if( nEscapeState == 1 )
-                {
-                    if( c == '#' )
-                    {
-                        nEscapeState = 2;
-                        sbEscapeString = new StringBuilder( sText.Length );
-                    }
-                    else 
-                    {
-                        sbConvertedText.Append( c );
-                        nEscapeState = 0;
-                    }
-                }
-                else if( nEscapeState == 2 )
-                {
-                    if( c == '@' )
-                    {   
-                        nEscapeState = 3;
-                    }
-                    else if( sbEscapeString != null )
-                    {
-                        sbEscapeString.Append( c );
-                    }
-                }
-                else if( nEscapeState == 3 )
-                {
-                    if( c == '@' )
-                    {
-                        if( sbEscapeString != null )
-                        {
-                            sbEscapeString.Append( c );
-                        }
-                        nEscapeState = 2;
-                    }
-                    else
-                    {
-                        if( sbEscapeString != null )
-                        {
-                            sbConvertedText.Append( sbEscapeString );
-                        }
-                        sbConvertedText.Append( c );
-                        sbEscapeString = null;
-                        nEscapeState = 0;
-                    }
-                }
-                else
-                {
-                    sbConvertedText.Append( c );
-                }
-            }
-
-            // Add any escape seq where last char is EOL.
-            if( nEscapeState == 3 )
-            {
-                if( sbEscapeString != null )
-                {
-                    sbConvertedText.Append( sbEscapeString );
-                }
-            }
-            return sbConvertedText.ToString();
-        }
-
 
         // KBR TODO will want this
 #if false
@@ -1327,7 +1104,7 @@ namespace GEDmill
         // Returns the note record with the given xref id.
         public CNoteRecord GetNoteRecord(string xref)
         {
-            if( xref == null || xref.Length == 0  )
+            if( string.IsNullOrEmpty(xref)  )
             {
                 return null;
             }
@@ -2113,6 +1890,7 @@ namespace GEDmill
             return alFamily;
         }
 
+#if false // KBR might want this
         // Converts all ANSEL characters to their corresponding Unicode
         private string ConvertAnsel(string sLine)
         {
@@ -2337,7 +2115,7 @@ namespace GEDmill
             return sbLineConverted.ToString();
 
         }
-
+#endif
         
         // Concatenate otherfile to end of basefile
         private void JoinFiles(string sBasefile, string sOtherfile)
