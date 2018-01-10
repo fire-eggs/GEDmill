@@ -77,10 +77,10 @@ namespace GEDmill.LLClasses
             }
             else
             {
-                sc = new CSourceCitationXref(gedcom);
-                (sc as CSourceCitationXref).m_xref = yagp.Xref;
+                sc = CSourceCitationXref.Translate(gedcom, yagp);
             }
 
+            // KBR TODO common translation support
             sc.m_alNoteStructures = new ArrayList();
             foreach (var note in yagp.Notes)
             {

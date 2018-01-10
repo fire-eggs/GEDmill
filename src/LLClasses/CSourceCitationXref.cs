@@ -25,6 +25,7 @@
 using System;
 using System.Collections;
 using GEDmill.HTMLClasses;
+using SharpGEDParser.Model;
 
 namespace GEDmill.LLClasses
 {
@@ -41,6 +42,16 @@ namespace GEDmill.LLClasses
         // Constructor
         public CSourceCitationXref( CGedcom gedcom ) : base( gedcom )
         {
+        }
+
+        public static CSourceCitationXref Translate(CGedcom gedcom, SourceCit yagp)
+        {
+            CSourceCitationXref sc = new CSourceCitationXref(gedcom);
+            sc.m_xref = yagp.Xref;
+            sc.m_sWhereWithinSource = yagp.Page;
+            sc.m_sEntryRecordingDate = yagp.Date;
+            sc.m_sCertaintyAssessment = yagp.Quay;
+            return sc;
         }
 
         // Copy constructor

@@ -62,7 +62,56 @@ namespace GEDmill.LLClasses
         {
             var rec = new CSourceRecord(gedcom);
             rec.m_xref = yagpSour.Ident;
-            // KBR TODO
+
+            rec.m_sSourceOriginator = yagpSour.Author;
+            rec.m_sSourceDescriptiveTitle = yagpSour.Title;
+            rec.m_sSourceFiledByEntry = yagpSour.Abbreviation;
+            rec.m_sSourcePublicationFacts = yagpSour.Publication;
+            rec.m_sTextFromSource = yagpSour.Text;
+
+            foreach (var repoCit in yagpSour.Cits)
+            {
+                // KBR TODO move to CSourceRepositoryCitation.Translate
+                CSourceRepositoryCitation src = new CSourceRepositoryCitation(gedcom);
+                src.m_xrefRepo = repoCit.Xref;
+
+                foreach (var note in repoCit.Notes)
+                {
+                    var ns = CNoteStructure.Translate(gedcom, note);
+                    src.m_alNoteStructures.Add(ns);
+                }
+
+                rec.m_alSourceRepositoryCitations.Add(src);
+            }
+
+            foreach (var note in yagpSour.Notes)
+            {
+                var ns = CNoteStructure.Translate(gedcom, note);
+                rec.m_alNoteStructures.Add(ns);
+            }
+
+            // KBR TODO CRecord level translate?
+            rec.m_sAutomatedRecordId = yagpSour.RIN;
+            foreach (var refN in yagpSour.REFNs)
+            {
+                CUserReferenceNumber urn = new CUserReferenceNumber(gedcom);
+                urn.m_sUserReferenceNumber = refN.Value;
+                urn.m_sUserReferenceType = ""; // KBR TODO yagp doesn't yet handle REFN.TYPE !
+                rec.m_alUserReferenceNumbers.Add(urn);
+            }
+
+            if (yagpSour.CHAN.Date.HasValue)
+            {
+                rec.m_changeDate = new CChangeDate(gedcom);
+                rec.m_changeDate.m_sChangeDate = yagpSour.CHAN.Date.Value.ToString("dd MMM yyyy");
+                rec.m_changeDate.m_sTimeValue = ""; // won't accept null
+            }
+
+            // KBR TODO ?
+            // media
+            //yagpSour.Data.Events
+            //rec.m_sResponsibleAgency = yagpSour.Data.Agency;
+
             return rec;
         }
 
@@ -268,9 +317,9 @@ namespace GEDmill.LLClasses
             get
             {
                 string sTitle = "";
-                if (m_sSourceDescriptiveTitle == null || m_sSourceDescriptiveTitle == "")
+                if (string.IsNullOrEmpty(m_sSourceDescriptiveTitle))
                 {
-                    if (m_sSourceFiledByEntry == null || m_sSourceFiledByEntry == "")
+                    if (string.IsNullOrEmpty(m_sSourceFiledByEntry))
                     {
                         return "Source " + m_xref;
                     }

@@ -38,6 +38,7 @@ namespace GEDmill.LLClasses
         // Constructor
         public CSourceRepositoryCitation( CGedcom gedcom ) : base( gedcom )
         {
+            m_alNoteStructures = new ArrayList();
         }
 
         // Parser
