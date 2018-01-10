@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections;
+using SharpGEDParser.Model;
 
 namespace GEDmill.LLClasses
 {
@@ -221,5 +222,14 @@ namespace GEDmill.LLClasses
 
             return mr;
         }
+
+        public static CMultimediaRecord Translate(CGedcom gedcom, MediaRecord yagp)
+        {
+            CMultimediaRecord mr = new CMultimediaRecord(gedcom);
+            mr.m_xref = yagp.Ident;
+            // KBR TODO
+            return mr;
+        }
+
     } // End of class
 } // End of namespace

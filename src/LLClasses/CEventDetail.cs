@@ -62,6 +62,8 @@ namespace GEDmill.LLClasses
         // Constructor
         public CEventDetail( CGedcom gedcom ) : base( gedcom )
         {
+            m_alSourceCitations = new ArrayList();
+            m_alNoteStructures = new ArrayList();
         }
 
         // Copy constructor
@@ -110,6 +112,19 @@ namespace GEDmill.LLClasses
                 ed.m_dateValue = CPGDate.Parse(ev.Date.Trim());
             ed.m_placeStructure = CPlaceStructure.Translate(gedcom, ev);
             ed.m_sCauseOfEvent = ev.Cause;
+
+            foreach (var sourceCit in ev.Cits)
+            {
+                CSourceCitation sc = CSourceCitation.Translate(gedcom, sourceCit);
+                ed.m_alSourceCitations.Add(sc);
+            }
+
+            foreach (var note in ev.Notes)
+            {
+                CNoteStructure ns = CNoteStructure.Translate(gedcom, note);
+                ed.m_alNoteStructures.Add(ns);
+            }
+
             return ed;
         }
 

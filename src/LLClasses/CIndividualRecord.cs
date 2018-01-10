@@ -162,13 +162,20 @@ namespace GEDmill.LLClasses
                 ir.m_alNoteStructures.Add(ns);
             }
 
-            // TODO html output parses the date which we just converted, then uses ToString on it ...
+            // KBR TODO html output parses the date which we just converted, then uses ToString on it ...
             if (yagpIndi.CHAN.Date.HasValue)
             {
                 ir.m_changeDate = new CChangeDate(gedcom);
                 ir.m_changeDate.m_sChangeDate = yagpIndi.CHAN.Date.Value.ToString("dd MMM yyyy");
                 ir.m_changeDate.m_sTimeValue = ""; // won't accept null
             }
+
+            foreach (var sourceCit in yagpIndi.Cits)
+            {
+                CSourceCitation sc = CSourceCitation.Translate(gedcom, sourceCit);
+                ir.m_alSourceCitations.Add(sc);
+            }
+
             return ir;
         }
 

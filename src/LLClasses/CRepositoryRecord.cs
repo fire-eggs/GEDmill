@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections;
+using SharpGEDParser.Model;
 
 namespace GEDmill.LLClasses
 {
@@ -98,6 +99,25 @@ namespace GEDmill.LLClasses
                 }
             }
             while( !bParsingFinished );
+
+            return rr;
+        }
+
+        public static CRepositoryRecord Translate(CGedcom gedcom, Repository yagp)
+        {
+            CRepositoryRecord rr = new CRepositoryRecord(gedcom);
+
+            rr.m_xref = yagp.Ident;
+            rr.m_sNameOfRepository = yagp.Name;
+
+            // KBR TODO rr.m_addressStructure = yagp.Addr;
+            // KBR TODO RIN REFN etc?
+
+            foreach (var note in yagp.Notes)
+            {
+                var ns = CNoteStructure.Translate(gedcom, note);
+                rr.m_alNoteStructures.Add(ns);
+            }
 
             return rr;
         }

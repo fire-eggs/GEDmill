@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections;
+using SharpGEDParser.Model;
 
 namespace GEDmill.LLClasses
 {
@@ -65,6 +66,28 @@ namespace GEDmill.LLClasses
 
             // Must be the inline version
             return CSourceCitationInLine.Parse( gedcom, nLevel );
+        }
+
+        public static CSourceCitation Translate(CGedcom gedcom, SourceCit yagp)
+        {
+            CSourceCitation sc;
+            if (string.IsNullOrEmpty(yagp.Xref))
+            {
+                sc = new CSourceCitationInLine(gedcom);
+            }
+            else
+            {
+                sc = new CSourceCitationXref(gedcom);
+                (sc as CSourceCitationXref).m_xref = yagp.Xref;
+            }
+
+            sc.m_alNoteStructures = new ArrayList();
+            foreach (var note in yagp.Notes)
+            {
+                var ns = CNoteStructure.Translate(gedcom, note);
+                sc.m_alNoteStructures.Add(ns);
+            }
+            return sc;
         }
 
 

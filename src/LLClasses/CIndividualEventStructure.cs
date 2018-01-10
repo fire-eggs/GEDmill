@@ -52,14 +52,6 @@ namespace GEDmill.LLClasses
             ies.m_eventDetail = CEventDetail.Translate(gedcom, indiEvent);
             ies.Type = indiEvent.Tag;
             ies.Value = indiEvent.Descriptor;
-
-            // TODO move to CEventDetail.translate
-            ies.m_eventDetail.m_alNoteStructures = new ArrayList();
-            foreach (var note in indiEvent.Notes)
-            {
-                CNoteStructure ns = CNoteStructure.Translate(gedcom, note);
-                ies.m_eventDetail.m_alNoteStructures.Add(ns);
-            }
             return ies;
         }
 

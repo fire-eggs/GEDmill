@@ -61,6 +61,8 @@ namespace GEDmill.LLClasses
         public static CSourceRecord Translate(CGedcom gedcom, SourceRecord yagpSour)
         {
             var rec = new CSourceRecord(gedcom);
+            rec.m_xref = yagpSour.Ident;
+            // KBR TODO
             return rec;
         }
 
