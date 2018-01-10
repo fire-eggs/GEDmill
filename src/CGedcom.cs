@@ -99,22 +99,16 @@ namespace GEDmill
         private Hashtable m_htSourceRecordsXref;
 
         // GEDCOM data
-        public CHeader m_header;
         public CSubmissionRecord m_submissionRecord;
-        public ArrayList m_alFamilyRecords;
-//        public ArrayList m_alIndividualRecords;
         public ArrayList m_alMultimediaRecords;
         public ArrayList m_alNoteRecords;
         public ArrayList m_alRepositoryRecords;     
-//        public ArrayList m_alSourceRecords;
         public ArrayList m_alSubmitterRecords;
         public ArrayList m_alAdoptedIndividuals;
 
         public List<CIndividualRecord> IndividualRecords { get; set; }
         public List<CSourceRecord> SourceRecords { get; set; }
-
-        // Which character set the file uses
-//        private ECharset m_ecCharset;
+        private List<CFamilyRecord> FamilyRecords { get; set; }
 
         // Constructor
         public CGedcom()
@@ -157,14 +151,12 @@ namespace GEDmill
         private void ClearOutParser()
         {
             m_alLines = new ArrayList();
-//            m_nBytesRead = 0;
-//            m_nBytesTotal = 0;
             m_nLineIndex = 0;
-            m_alFamilyRecords = new ArrayList();
             m_htFamilyRecordsXref = new Hashtable(); 
 
             IndividualRecords = new List<CIndividualRecord>();
             SourceRecords = new List<CSourceRecord>();
+            FamilyRecords = new List<CFamilyRecord>();
 
             m_htIndividualRecordsXref = new Hashtable();
             m_alMultimediaRecords = new ArrayList();
@@ -172,11 +164,8 @@ namespace GEDmill
             m_alRepositoryRecords = new ArrayList();
             m_htSourceRecordsXref = new Hashtable();
             m_alSubmitterRecords = new ArrayList();
-            m_header = null;
             m_submissionRecord = null;
             m_bDataMayStartWithWhitespace = true;
-//            m_ecCharset = ECharset.Unknown8bit;
-
         }
 
         private void addIndi(IndiRecord yagpIndi)
@@ -189,7 +178,7 @@ namespace GEDmill
         private void addFam(FamRecord yagpFam)
         {
             CFamilyRecord cfr = CFamilyRecord.Translate(this, yagpFam);
-            m_alFamilyRecords.Add(cfr);
+            FamilyRecords.Add(cfr);
             m_htFamilyRecordsXref.Add(cfr.m_xref, cfr);
         }
 
@@ -1237,220 +1226,9 @@ namespace GEDmill
             return sbConvertedText.ToString();
         }
 
-        // Parses a HEADER from LINEAGE_LINKED GEDCOM. Returns false if parsing failed and leaves streamReader in its original state.
-        private bool ParseHeader()
-        {
-            CGedcomLine gedcomLine = (CGedcomLine)m_alLines[ m_nLineIndex ];
-            if( gedcomLine == null || gedcomLine.Tag.Length<4 || gedcomLine.Tag.Substring(0,4) != "HEAD" )
-            {
-                // No HEAD tag found (FTM 2006 seems to use "HEADER" instead of "HEAD".)
-                return false;
-            }
-            m_nLineIndex++;
 
-            m_header = new CHeader();
-
-            for(;;)
-            {
-                gedcomLine = (CGedcomLine)m_alLines[ m_nLineIndex ];
-                if( gedcomLine.Level != 1 )
-                {
-                    // Either we have the start of another nLevel 0, or an out of sequence nLevel
-                    return true;
-                }
-                switch( gedcomLine.Tag )
-                {
-                    case "SOUR":
-                        ParseApprovedSystemId();
-                        break;
-                    case "DEST":
-                        m_header.m_sReceivingSystemName = gedcomLine.LineItem;
-                        m_nLineIndex++;
-                        break;
-                    case "DATE":
-                        ParseTransmissionDate();
-                        break;
-                    case "SUBM":
-                        m_header.m_xrefSubM = gedcomLine.XrefID;
-                        m_nLineIndex++;
-                        break;
-                    case "SUBN":
-                        m_header.m_xrefSubN = gedcomLine.XrefID;
-                        m_nLineIndex++;
-                        break;
-                    case "FILE":
-                        m_header.m_sFilename = gedcomLine.LineItem;
-                        m_nLineIndex++;
-                        break;
-                    case "COPR":
-                        m_header.m_sCopyright2 = gedcomLine.LineItem;
-                        m_nLineIndex++;
-                        break;
-                    case "GEDC":
-                        ParseGedcomVersion();
-                        break;
-                    case "CHAR":
-                        ParseCharacterSet();
-                        break;
-                    case "LANG":
-                        m_header.m_sLanguage = gedcomLine.LineItem;
-                        m_nLineIndex++;
-                        break;
-                    case "PLAC":
-                        ParsePlaceHierarchy();
-                        break;
-                    case "NOTE":
-                        m_header.m_sGedcomContentDescription = gedcomLine.LineItem;
-                        m_nLineIndex++;
-                        break;
-                    case "CONT":
-                    case "CONC":
-                        m_header.m_sGedcomContentDescription += gedcomLine.LineItem;
-                        m_nLineIndex++;
-                        break;
-                    default:
-                        // Unknown tag, move on to next gedcomLine
-                        m_nLineIndex++;
-                        break;
-                }
-            }
-        }
-
-
-        // Parser for GEDCOM approved system id
-        // A system identification name which was obtained through the GEDCOM registration process. This
-        // name must be unique from any other product. Spaces within the name must be substituted with a 0x5F
-        // (underscore _) so as to create one word.     
-        private void ParseApprovedSystemId()
-        {
-            CGedcomLine gedcomLine = (CGedcomLine)m_alLines[ m_nLineIndex ];
-
-            m_header.m_sApprovedSystemId = gedcomLine.LineItem;
-            m_nLineIndex++;
-
-            for(;;)
-            {
-                gedcomLine = (CGedcomLine)m_alLines[ m_nLineIndex ];
-                if( gedcomLine.Level != 2 )
-                {
-                    return;
-                }
-                switch( gedcomLine.Tag )
-                {
-                    case "VERS":
-                        m_header.m_sVersionNumber = gedcomLine.LineItem;
-                        m_nLineIndex++;
-                        break;
-                    case "VER":
-                        m_header.m_sVersionNumber = gedcomLine.LineItem;
-                        m_nLineIndex++;
-                        break;
-                    case "NAME":
-                        m_header.m_sNameOfProduct = gedcomLine.LineItem;
-                        m_nLineIndex++;
-                        break;
-                    case "CORP":
-                        ParseNameOfBusiness();
-                        break;
-                    case "DATA":
-                        ParseNameOfSourceData();
-                        break;
-                    default:
-                        LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Warning,  "Unknown header asid tag " + gedcomLine.Tag ); 
-                        m_nLineIndex++;
-                        break;                      
-                }
-            }
-        }
-
-        // Parser for GEDCOM transmission date
-        private void ParseTransmissionDate()
-        {
-            CGedcomLine gedcomLine = (CGedcomLine)m_alLines[ m_nLineIndex ];
-
-            m_header.m_sTransmissionDate = gedcomLine.LineItem;
-            m_nLineIndex++;
-
-            for(;;)
-            {
-                gedcomLine = (CGedcomLine)m_alLines[ m_nLineIndex ];
-                if( gedcomLine.Level != 2 )
-                {
-                    return;
-                }
-                switch( gedcomLine.Tag )
-                {
-                    case "TIME":
-                        m_header.m_sTransmissionTime = gedcomLine.LineItem;
-                        m_nLineIndex++;
-                        break;
-                    default:
-                        LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Warning,  "Unknown TransmissionDate tag " + gedcomLine.Tag ); 
-                        m_nLineIndex++;
-                        break;
-                }
-            }           
-        }
-
-        // Parser for GEDCOM version
-        private void ParseGedcomVersion()
-        {
-            m_nLineIndex++;
-
-            for(;;)
-            {
-                CGedcomLine gedcomLine = (CGedcomLine)m_alLines[ m_nLineIndex ];
-                if( gedcomLine.Level != 2 )
-                {
-                    return;
-                }
-                switch( gedcomLine.Tag )
-                {
-                    case "VERS":
-                        m_header.m_sGedcomVersionNumber = gedcomLine.LineItem;
-                        m_nLineIndex++;
-                        break;
-                    case "FORM":
-                        m_header.m_sGedcomForm = gedcomLine.LineItem;
-                        m_nLineIndex++;
-                        break;
-                    default:
-                        LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Warning, "Unknown GedcomVersion tag " + gedcomLine.Tag ); 
-                        m_nLineIndex++;
-                        break;
-                }
-            }
-        }
-
-        // Parser for GEDCOM character set
-        private void ParseCharacterSet()
-        {
-            CGedcomLine gedcomLine = (CGedcomLine)m_alLines[ m_nLineIndex ];
-
-            m_header.m_sCharacterSet = gedcomLine.LineItem;
-            m_nLineIndex++;
-
-            for(;;)
-            {
-                gedcomLine = (CGedcomLine)m_alLines[ m_nLineIndex ];
-                if( gedcomLine.Level != 2 )
-                {
-                    return;
-                }
-                switch( gedcomLine.Tag )
-                {
-                    case "VERS":
-                        m_header.m_sCharacterSetVersion = gedcomLine.LineItem;
-                        m_nLineIndex++;
-                        break;
-                    default:
-                        LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Warning, "Unknown CharacterSet tag " + gedcomLine.Tag ); 
-                        m_nLineIndex++;
-                        break;
-                }
-            }
-        }
-
+        // KBR TODO will want this
+#if false
         // Parser for GEDCOM place hierarchy
         private void ParsePlaceHierarchy()
         {
@@ -1475,169 +1253,7 @@ namespace GEDmill
             }
 
         }
-
-        // Parser for GEDCOM name of business
-        private void ParseNameOfBusiness()
-        {
-            CGedcomLine gedcomLine = (CGedcomLine)m_alLines[ m_nLineIndex ];
-
-            m_header.m_sNameOfBusiness = gedcomLine.LineItem;
-            m_nLineIndex++;
-
-            for(;;)
-            {
-                gedcomLine = (CGedcomLine)m_alLines[ m_nLineIndex ];
-                if( gedcomLine.Level != 3 )
-                {
-                    return;
-                }
-                switch( gedcomLine.Tag )
-                {
-                    case "ADDR":
-                        ParseAddressLine();
-                        break;
-                    case "PHON":
-                        m_header.m_alPhone.Add( gedcomLine.LineItem );
-                        m_nLineIndex++;
-                        break;
-                    case "EMAIL":
-                        m_header.m_alEmail.Add( gedcomLine.LineItem );
-                        m_nLineIndex++;
-                        break;
-                    case "FAX":
-                        m_header.m_alFax.Add( gedcomLine.LineItem );
-                        m_nLineIndex++;
-                        break;
-                    case "WWW":
-                        m_header.m_alWww.Add( gedcomLine.LineItem );
-                        m_nLineIndex++;
-                        break;
-                    default:
-                        LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Warning, "Unknown NameOfBusiness tag " + gedcomLine.Tag ); 
-                        m_nLineIndex++;
-                        break;
-                }
-            }           
-        }
-
-        // Parser for GEDCOM name of source data
-        private void ParseNameOfSourceData()
-        {
-            CGedcomLine gedcomLine = (CGedcomLine)m_alLines[ m_nLineIndex ];
-
-            m_header.m_sNameOfSourceData = gedcomLine.LineItem;
-            m_nLineIndex++;
-
-            for(;;)
-            {
-                gedcomLine = (CGedcomLine)m_alLines[ m_nLineIndex ];
-                if( gedcomLine.Level != 3 )
-                {
-                    return;
-                }
-                switch( gedcomLine.Tag )
-                {
-                    case "DATE":
-                        m_header.m_sPublicationDate = gedcomLine.LineItem;
-                        m_nLineIndex++;
-                        break;
-                    case "COPR":
-                        ParseCopyrightSourceData();
-                        break;
-                    default:
-                        LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Warning, "Unknown NameOfSourceData tag " + gedcomLine.Tag ); 
-                        m_nLineIndex++;
-                        break;
-                }
-            }                   
-        }
-
-        // Parser for GEDCOM address line
-        private void ParseAddressLine()
-        {
-            CGedcomLine gedcomLine = (CGedcomLine)m_alLines[ m_nLineIndex ];
-
-            m_header.m_sAddressLine = gedcomLine.LineItem;
-            m_nLineIndex++;
-
-            for(;;)
-            {
-                gedcomLine = (CGedcomLine)m_alLines[ m_nLineIndex ];
-                if( gedcomLine.Level != 3 )
-                {
-                    return;
-                }
-                switch( gedcomLine.Tag )
-                {
-                    case "CONT":
-                        m_header.m_sAddressLine += gedcomLine.LineItem;
-                        m_nLineIndex++;
-                        break;
-                    case "ADR1":
-                        m_header.m_sAddressLine1 = gedcomLine.LineItem;
-                        m_nLineIndex++;
-                        break;
-                    case "ADR2":
-                        m_header.m_sAddressLine2 = gedcomLine.LineItem;
-                        m_nLineIndex++;
-                        break;
-                    case "ADR3":
-                        m_header.m_sAddressLine3 = gedcomLine.LineItem;
-                        m_nLineIndex++;
-                        break;
-                    case "CITY":
-                        m_header.m_sAddressCity = gedcomLine.LineItem;
-                        m_nLineIndex++;
-                        break;
-                    case "STAE":
-                        m_header.m_sAddressState = gedcomLine.LineItem;
-                        m_nLineIndex++;
-                        break;
-                    case "POST":
-                        m_header.m_sAddressPostalCode = gedcomLine.LineItem;
-                        m_nLineIndex++;
-                        break;
-                    case "CTRY":
-                        m_header.m_sAddressCountry = gedcomLine.LineItem;
-                        m_nLineIndex++;
-                        break;
-                    default:
-                        LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Warning, "Unknown AddressLine tag " + gedcomLine.Tag ); 
-                        m_nLineIndex++;
-                        break;
-                }
-            }                   
-        }
-
-        // Parser for GEDCOM copyright source
-        private void ParseCopyrightSourceData()
-        {
-            CGedcomLine gedcomLine = (CGedcomLine)m_alLines[ m_nLineIndex ];
-
-            m_header.m_sCopyrightSourceData = gedcomLine.LineItem;
-            m_nLineIndex++;
-
-            for(;;)
-            {
-                gedcomLine = (CGedcomLine)m_alLines[ m_nLineIndex ];
-                if( gedcomLine.Level != 4 )
-                {
-                    return;
-                }
-                switch( gedcomLine.Tag )
-                {
-                    case "CONT":
-                    case "CONC":
-                        m_header.m_sCopyrightSourceData += gedcomLine.LineItem;
-                        m_nLineIndex++;
-                        break;
-                    default:
-                        LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Warning, "Unknown CopyrightSourceData( tag " + gedcomLine.Tag ); 
-                        m_nLineIndex++;
-                        break;
-                }
-            }                   
-        }
+#endif
 
         // Return the next line of the parsed GEDCOM, ensuring that it meets the expected critera
         // Returns null if no lines left or criteria not matched.
@@ -1728,7 +1344,7 @@ namespace GEDmill
         // Returns the family record with the given xref id.
         public CFamilyRecord GetFamilyRecord(string xref)
         {
-            if( xref == null || xref.Length == 0 )
+            if( string.IsNullOrEmpty(xref) )
             {
                 return null;
             }
@@ -1738,7 +1354,7 @@ namespace GEDmill
                 return (CFamilyRecord)m_htFamilyRecordsXref[ xref ];
             }
 
-            foreach( CFamilyRecord fr in m_alFamilyRecords )
+            foreach( CFamilyRecord fr in FamilyRecords )
             {
                 if (fr.m_xref == xref)
                 {
@@ -1774,7 +1390,7 @@ namespace GEDmill
         // Returns the source record with the given xref id.
         public CSourceRecord GetSourceRecord(string xref)
         {
-            if( xref == null || xref.Length == 0  )
+            if( string.IsNullOrEmpty(xref)  )
             {
                 return null;
             }
@@ -1797,7 +1413,7 @@ namespace GEDmill
         // Returns the multimedia record with the given xref id.
         public CMultimediaRecord GetMultimediaRecord( string xref )
         {
-            if( xref == null || xref.Length == 0  )
+            if( string.IsNullOrEmpty(xref)  )
             {
                 return null;
             }
@@ -1815,7 +1431,7 @@ namespace GEDmill
         // Returns the repository record with the given xref id.
         public CRepositoryRecord GetRepositoryRecord(string xref)
         {
-            if (xref == null || xref.Length == 0)
+            if (string.IsNullOrEmpty(xref))
             {
                 return null;
             }
@@ -1833,7 +1449,7 @@ namespace GEDmill
         // Converts xref string to a number for comparison and hashing purposes
         public static int MakeXrefNumber( string xref )
         {
-            if (xref == null || xref.Length == 0)
+            if (string.IsNullOrEmpty(xref))
             {
                 return 0;
             }
@@ -2087,7 +1703,7 @@ namespace GEDmill
         // Put children in age order
         private void AddChildrenToFamilies()
         {
-            foreach( CFamilyRecord fr in m_alFamilyRecords )
+            foreach( CFamilyRecord fr in FamilyRecords )
             {
                 fr.AddChildren( this );
             }
