@@ -133,6 +133,15 @@ namespace GEDmill.LLClasses
             {
                 CIndividualEventStructure ies = CIndividualEventStructure.Translate(gedcom, indiEvent);
                 ir.m_alIndividualEventStructures.Add(ies);
+
+                if (ies.Type == "ADOP") // KBR TODO to CIES.Translate?
+                {
+                    gedcom.m_alAdoptedIndividuals.Add(ir);
+                    ies.m_eventDetail.m_bAdoptedByHusband = indiEvent.FamcAdop != "MOTHER";
+                    ies.m_eventDetail.m_bAdoptedByWife = indiEvent.FamcAdop != "FATHER";
+                    ies.m_eventDetail.m_xrefFam = indiEvent.Famc;
+                }
+
             }
             foreach (var indiEvent in yagpIndi.Attribs)
             {

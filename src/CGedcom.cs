@@ -255,6 +255,7 @@ namespace GEDmill
             Translate();
             LogFile.TheLogFile.WriteLine(LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "YAGP translate complete");
 
+            LinkAdoptees();
             AddBackRefs();
 
             if (m_progressWindow != null)
@@ -2294,6 +2295,50 @@ namespace GEDmill
                 {
                     sc.AddBackreference(new CBackReference(ERecordType.Note, brnr.m_xref, ""));
                     sc.AddPicFromCitationToRecord();
+                }
+            }
+            
+        }
+
+        private void LinkAdoptees()
+        {
+            // Tie up adopted individuals with their associated fr
+            LogFile.TheLogFile.WriteLine(LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "Linking adoptees.");
+            foreach (CIndividualRecord adopIr in m_alAdoptedIndividuals)
+            {
+                CEventDetail adopEvent = adopIr.GetEvent("ADOP");
+                if (adopEvent != null)
+                {
+                    string adopFamXref = adopEvent.m_xrefFam;
+                    bool adopHusband = adopEvent.m_bAdoptedByHusband;
+                    bool adopWife = adopEvent.m_bAdoptedByWife;
+                    CFamilyRecord adopFam = GetFamilyRecord(adopFamXref);
+                    if (adopFam != null && (adopHusband || adopWife))
+                    {
+                        if (adopHusband)
+                        {
+                            CIndividualRecord irAdopHusband = GetIndividualRecord(adopFam.m_xrefHusband);
+                            if (irAdopHusband != null)
+                            {
+                                CIndividualEventStructure husbandAdopEvent = new CIndividualEventStructure(adopEvent);
+                                husbandAdopEvent.Type = "GEDMILL_ADOPTION_OF_CHILD"; // Special GEDmill only event
+                                husbandAdopEvent.m_eventDetail.m_xrefAdoptedChild = adopIr.m_xref;
+                                irAdopHusband.m_alIndividualEventStructures.Add(husbandAdopEvent);
+                            }
+                        }
+                        if (adopWife)
+                        {
+                            CIndividualRecord irAdopWife = GetIndividualRecord(adopFam.m_xrefWife);
+                            if (irAdopWife != null)
+                            {
+                                CIndividualEventStructure wifeAdopEvent = new CIndividualEventStructure(adopEvent);
+                                wifeAdopEvent.Type = "GEDMILL_ADOPTION_OF_CHILD"; // Special GEDmill only event
+                                wifeAdopEvent.m_eventDetail.m_xrefAdoptedChild = adopIr.m_xref;
+                                irAdopWife.m_alIndividualEventStructures.Add(wifeAdopEvent);
+                            }
+                        }
+
+                    }
                 }
             }
             

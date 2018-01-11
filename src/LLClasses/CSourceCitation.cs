@@ -41,6 +41,9 @@ namespace GEDmill.LLClasses
         // Constructor
         public CSourceCitation( CGedcom gedcom ) : base( gedcom )
         {
+            m_alMultimediaLinks = new ArrayList();
+            m_alNoteStructures = new ArrayList();
+            m_alTextsFromSource = new ArrayList();
         }
 
         // Copy Constructor

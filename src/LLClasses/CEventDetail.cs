@@ -64,6 +64,7 @@ namespace GEDmill.LLClasses
         {
             m_alSourceCitations = new ArrayList();
             m_alNoteStructures = new ArrayList();
+            m_alMultimediaLinks = new ArrayList();
         }
 
         // Copy constructor

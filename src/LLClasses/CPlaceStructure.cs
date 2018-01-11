@@ -45,6 +45,8 @@ namespace GEDmill.LLClasses
         // Constructor
         public CPlaceStructure( CGedcom gedcom ) : base( gedcom )
         {
+            m_alNoteStructures = new ArrayList();
+            m_alSourceCitations = new ArrayList();
         }
 
         // Constructor
