@@ -108,7 +108,7 @@ namespace GEDmill.LLClasses
                         CMultimediaFileReference mfr = new CMultimediaFileReference(gedcom);
                         mfr.m_sMultimediaFileReference = mediaFile.FileRefn;
                         mfr.m_sMultimediaFormat = mediaFile.Form;
-                        mfr.m_sDescriptiveTitle = mediaFile.Title;
+                        mfr.m_sDescriptiveTitle = mediaFile.Title ?? mediaLink.Title;
                         mlil.m_alMultimediaFileRefns.Add(mfr);
                     }
                     rec.m_alMultimediaLinks.Add(mlil);
