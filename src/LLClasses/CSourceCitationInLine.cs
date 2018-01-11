@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections;
+using SharpGEDParser.Model;
 
 namespace GEDmill.LLClasses
 {
@@ -47,6 +48,14 @@ namespace GEDmill.LLClasses
         {
             m_bRestricted = false;
             m_alBackreferences = new ArrayList();
+        }
+
+        public static CSourceCitationInLine Translate(CGedcom gedcom, SourceCit yagp)
+        {
+            CSourceCitationInLine sc = new CSourceCitationInLine(gedcom);
+            sc.m_sSourceDescription = yagp.Desc;
+            sc.m_sCertaintyAssessment = yagp.Quay;
+            return sc;
         }
 
         // Copy Constructor

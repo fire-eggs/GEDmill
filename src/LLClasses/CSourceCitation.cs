@@ -76,14 +76,19 @@ namespace GEDmill.LLClasses
             CSourceCitation sc;
             if (string.IsNullOrEmpty(yagp.Xref))
             {
-                sc = new CSourceCitationInLine(gedcom);
+                sc = CSourceCitationInLine.Translate(gedcom,yagp);
             }
             else
             {
                 sc = CSourceCitationXref.Translate(gedcom, yagp);
             }
 
-            // KBR TODO common translation support
+            foreach (var txt in yagp.Text)
+            {
+                sc.m_alTextsFromSource.Add(txt);
+            }
+
+            // KBR TODO common translation support?
             sc.m_alNoteStructures = new ArrayList();
             foreach (var note in yagp.Notes)
             {
