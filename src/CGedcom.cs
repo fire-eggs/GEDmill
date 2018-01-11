@@ -235,7 +235,25 @@ namespace GEDmill
                     addMedia(gedCommon as MediaRecord);
                 }
             }
+
+            ConvertMediaLinks();
             AddChildrenToFamilies();
+        }
+
+        private void ConvertMediaLinks()
+        {
+            // Create a list of MFRs unique to the individual
+            LogFile.TheLogFile.WriteLine(LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "Ordering individual's mfrs.");
+            foreach (CIndividualRecord irMultimedia in IndividualRecords)
+            {
+                ConvertMultimediaLinks(irMultimedia.m_alMultimediaLinks, ref irMultimedia.m_alUniqueFileRefs);
+            }
+            // Create a list of MFRs unique to the source
+            LogFile.TheLogFile.WriteLine(LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "Ordering source's mfrs.");
+            foreach (CSourceRecord srMultimedia in SourceRecords)
+            {
+                ConvertMultimediaLinks(srMultimedia.m_alMultimediaLinks, ref srMultimedia.m_alUniqueFileRefs);
+            }
         }
 
         private FileRead _yagp;

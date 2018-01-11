@@ -227,7 +227,31 @@ namespace GEDmill.LLClasses
         {
             CMultimediaRecord mr = new CMultimediaRecord(gedcom);
             mr.m_xref = yagp.Ident;
-            // KBR TODO
+
+            foreach (var mediaFile in yagp.Files)
+            {
+                CMultimediaFileReference mfr = new CMultimediaFileReference(gedcom);
+                mfr.m_sDescriptiveTitle = mediaFile.Title;
+                mfr.m_sMultimediaFileReference = mediaFile.FileRefn;
+                mfr.m_sMultimediaFormat = mediaFile.Form;
+
+                // KBR TODO mfr doesn't support OBJE.FILE.FORM.TYPE (?)
+
+                mr.m_alMultimediaFileReferences.Add(mfr);
+            }
+
+            foreach (var note in yagp.Notes)
+            {
+                var ns = CNoteStructure.Translate(gedcom, note);
+                mr.m_alNoteStructures.Add(ns);
+            }
+
+            foreach (var sourceCit in yagp.Cits)
+            {
+                CSourceCitation sc = CSourceCitation.Translate(gedcom, sourceCit);
+                mr.m_alSourceCitations.Add(sc);
+            }
+
             return mr;
         }
 

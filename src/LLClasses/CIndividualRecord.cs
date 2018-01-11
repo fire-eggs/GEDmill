@@ -170,6 +170,7 @@ namespace GEDmill.LLClasses
 
             }
 
+            // KBR TODO move to CISRecord.Translate?
             foreach (var note in yagpIndi.Notes)
             {
                 var ns = CNoteStructure.Translate(gedcom, note);
@@ -182,6 +183,29 @@ namespace GEDmill.LLClasses
                 ir.m_alSourceCitations.Add(sc);
             }
 
+            // KBR TODO move to CIsRecord?
+            foreach (var mediaLink in yagpIndi.Media)
+            {
+                if (! string.IsNullOrEmpty(mediaLink.Xref))
+                {
+                    CMultimediaLinkXref mlx = new CMultimediaLinkXref(gedcom);
+                    mlx.m_xref = mediaLink.Xref;
+                    ir.m_alMultimediaLinks.Add(mlx);
+                }
+                else
+                {
+                    CMultimediaLinkInLine mlil = new CMultimediaLinkInLine(gedcom);
+                    foreach (var mediaFile in mediaLink.Files)
+                    {
+                        CMultimediaFileReference mfr = new CMultimediaFileReference(gedcom);
+                        mfr.m_sMultimediaFileReference = mediaFile.FileRefn;
+                        mfr.m_sMultimediaFormat = mediaFile.Form;
+                        mfr.m_sDescriptiveTitle = mediaFile.Title;
+                        mlil.m_alMultimediaFileRefns.Add(mfr);
+                    }
+                    ir.m_alMultimediaLinks.Add(mlil);
+                }
+            }
             return ir;
         }
 

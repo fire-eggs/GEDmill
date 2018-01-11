@@ -84,16 +84,36 @@ namespace GEDmill.LLClasses
                 rec.m_alSourceRepositoryCitations.Add(src);
             }
 
+            // KBR TODO move to CIsRecord
             foreach (var note in yagpSour.Notes)
             {
                 var ns = CNoteStructure.Translate(gedcom, note);
                 rec.m_alNoteStructures.Add(ns);
             }
 
-            // KBR TODO ?
-            // media
-            //yagpSour.Data.Events
-            //rec.m_sResponsibleAgency = yagpSour.Data.Agency;
+            // KBR TODO move to CIsRecord
+            foreach (var mediaLink in yagpSour.Media)
+            {
+                if (!string.IsNullOrEmpty(mediaLink.Xref))
+                {
+                    CMultimediaLinkXref mlx = new CMultimediaLinkXref(gedcom);
+                    mlx.m_xref = mediaLink.Xref;
+                    rec.m_alMultimediaLinks.Add(mlx);
+                }
+                else
+                {
+                    CMultimediaLinkInLine mlil = new CMultimediaLinkInLine(gedcom);
+                    foreach (var mediaFile in mediaLink.Files)
+                    {
+                        CMultimediaFileReference mfr = new CMultimediaFileReference(gedcom);
+                        mfr.m_sMultimediaFileReference = mediaFile.FileRefn;
+                        mfr.m_sMultimediaFormat = mediaFile.Form;
+                        mfr.m_sDescriptiveTitle = mediaFile.Title;
+                        mlil.m_alMultimediaFileRefns.Add(mfr);
+                    }
+                    rec.m_alMultimediaLinks.Add(mlil);
+                }
+            }
 
             return rec;
         }

@@ -37,6 +37,7 @@ namespace GEDmill.LLClasses
         // Constructor
         public CMultimediaLinkInLine( CGedcom gedcom ) : base( gedcom )
         {
+            m_alMultimediaFileRefns = new ArrayList();
         }
 
         // CopyConstructor
