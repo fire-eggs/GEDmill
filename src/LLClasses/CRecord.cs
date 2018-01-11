@@ -24,11 +24,12 @@
 
 using System;
 using System.Collections;
+using SharpGEDParser.Model;
 
 namespace GEDmill.LLClasses
 {
     // Base class for the various records used in GEDCOM (individual, source etc.)
-    public class CRecord : GEDmill.LLClasses.CParserObject
+    public class CRecord : CParserObject
     {
         // XREF, a unique identifier for the record
         public string m_xref;
@@ -46,6 +47,30 @@ namespace GEDmill.LLClasses
         public CRecord( CGedcom gedcom ) : base( gedcom )
         {
             m_alUserReferenceNumbers = new ArrayList();
+        }
+
+        public static void Translate(CRecord rec, GEDCommon yagp)
+        {
+            // Common yagp translation
+            rec.m_xref = yagp.Ident;
+
+            rec.m_sAutomatedRecordId = yagp.RIN;
+
+            foreach (var refN in yagp.REFNs)
+            {
+                CUserReferenceNumber urn = new CUserReferenceNumber(rec.Gedcom);
+                urn.m_sUserReferenceNumber = refN.Value;
+                urn.m_sUserReferenceType = ""; // KBR TODO yagp doesn't yet handle REFN.TYPE !
+                rec.m_alUserReferenceNumbers.Add(urn);
+            }
+
+            // KBR TODO html output parses the date which we just converted, then uses ToString on it ...
+            if (yagp.CHAN.Date.HasValue)
+            {
+                rec.m_changeDate = new CChangeDate(rec.Gedcom);
+                rec.m_changeDate.m_sChangeDate = yagp.CHAN.Date.Value.ToString("dd MMM yyyy");
+                rec.m_changeDate.m_sTimeValue = ""; // won't accept null
+            }
         }
 
         // Parser

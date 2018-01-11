@@ -61,7 +61,7 @@ namespace GEDmill.LLClasses
         public static CSourceRecord Translate(CGedcom gedcom, SourceRecord yagpSour)
         {
             var rec = new CSourceRecord(gedcom);
-            rec.m_xref = yagpSour.Ident;
+            CRecord.Translate(rec, yagpSour); // xref, rin, refn, chan
 
             rec.m_sSourceOriginator = yagpSour.Author;
             rec.m_sSourceDescriptiveTitle = yagpSour.Title;
@@ -88,23 +88,6 @@ namespace GEDmill.LLClasses
             {
                 var ns = CNoteStructure.Translate(gedcom, note);
                 rec.m_alNoteStructures.Add(ns);
-            }
-
-            // KBR TODO CRecord level translate?
-            rec.m_sAutomatedRecordId = yagpSour.RIN;
-            foreach (var refN in yagpSour.REFNs)
-            {
-                CUserReferenceNumber urn = new CUserReferenceNumber(gedcom);
-                urn.m_sUserReferenceNumber = refN.Value;
-                urn.m_sUserReferenceType = ""; // KBR TODO yagp doesn't yet handle REFN.TYPE !
-                rec.m_alUserReferenceNumbers.Add(urn);
-            }
-
-            if (yagpSour.CHAN.Date.HasValue)
-            {
-                rec.m_changeDate = new CChangeDate(gedcom);
-                rec.m_changeDate.m_sChangeDate = yagpSour.CHAN.Date.Value.ToString("dd MMM yyyy");
-                rec.m_changeDate.m_sTimeValue = ""; // won't accept null
             }
 
             // KBR TODO ?

@@ -81,11 +81,10 @@ namespace GEDmill.LLClasses
             // KBR TODO need to have CRecord.Translate for RIN/REFN/etc?
 
             CIndividualRecord ir = new CIndividualRecord(gedcom);
-            ir.m_xref = yagpIndi.Ident;
+            CRecord.Translate(ir, yagpIndi); // xref, rin, refn, chan
+
             ir.m_sSexValue = yagpIndi.FullSex;
             ir.YAGP = yagpIndi;
-
-            ir.m_sAutomatedRecordId = yagpIndi.RIN;
 
             foreach (var nameRec in yagpIndi.Names)
             {
@@ -166,14 +165,6 @@ namespace GEDmill.LLClasses
             {
                 var ns = CNoteStructure.Translate(gedcom, note);
                 ir.m_alNoteStructures.Add(ns);
-            }
-
-            // KBR TODO html output parses the date which we just converted, then uses ToString on it ...
-            if (yagpIndi.CHAN.Date.HasValue)
-            {
-                ir.m_changeDate = new CChangeDate(gedcom);
-                ir.m_changeDate.m_sChangeDate = yagpIndi.CHAN.Date.Value.ToString("dd MMM yyyy");
-                ir.m_changeDate.m_sTimeValue = ""; // won't accept null
             }
 
             foreach (var sourceCit in yagpIndi.Cits)
