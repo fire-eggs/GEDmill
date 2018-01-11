@@ -22,15 +22,14 @@
  *
  */
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Collections;
-using System.Text;
 using GEDmill.LLClasses;
-using System.Threading;
 using SharpGEDParser;
 using SharpGEDParser.Model;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading;
 
 // ReSharper disable LoopCanBeConvertedToQuery
 // ReSharper disable InconsistentNaming
@@ -255,6 +254,8 @@ namespace GEDmill
             LogFile.TheLogFile.WriteLine(LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "YAGP read complete");
             Translate();
             LogFile.TheLogFile.WriteLine(LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "YAGP translate complete");
+
+            AddBackRefs();
 
             if (m_progressWindow != null)
             {
@@ -2208,8 +2209,95 @@ namespace GEDmill
                     }
                 }
             }
-        }       
+        }
 
+        private void AddBackRefs()
+        {
+            LogFile.TheLogFile.WriteLine(LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "Linking source citation backreferences.");
+            foreach (CIndividualRecord brir in IndividualRecords)
+            {
+                foreach (CIndividualEventStructure ies in brir.m_alIndividualEventStructures)
+                {
+                    if (ies.m_eventDetail != null)
+                    {
+                        foreach (CSourceCitation sc in ies.m_eventDetail.m_alSourceCitations)
+                        {
+                            sc.AddBackreference(new CBackReference(ERecordType.Individual, brir.m_xref, ies.Type));
+                            sc.AddPicFromCitationToRecord();
+                        }
+                        foreach (CNoteStructure ns in ies.m_eventDetail.m_alNoteStructures)
+                        {
+                            if (ns != null && ns.m_alSourceCitations != null)
+                            {
+                                foreach (CSourceCitation sc in ns.m_alSourceCitations)
+                                {
+                                    sc.AddBackreference(new CBackReference(ERecordType.Individual, brir.m_xref, ies.Type));
+                                    sc.AddPicFromCitationToRecord();
+                                }
+                            }
+                        }
+                    }
+                }
+                foreach (CPersonalNameStructure pns in brir.m_alPersonalNameStructures)
+                {
+                    if (pns.m_personalNamePieces != null)
+                    {
+                        foreach (CSourceCitation sc in pns.m_personalNamePieces.m_alSourceCitations)
+                        {
+                            sc.AddBackreference(new CBackReference(ERecordType.Individual, brir.m_xref, "NAME"));
+                            sc.AddPicFromCitationToRecord();
+                        }
+                    }
+                }
+                foreach (CSourceCitation sc in brir.m_alSourceCitations)
+                {
+                    sc.AddBackreference(new CBackReference(ERecordType.Individual, brir.m_xref, ""));
+                    sc.AddPicFromCitationToRecord();
+                }
+            }
+            foreach (CFamilyRecord brfr in FamilyRecords)
+            {
+                foreach (CFamilyEventStructure fes in brfr.m_alFamilyEventStructures)
+                {
+                    if (fes.m_eventDetail != null)
+                    {
+                        foreach (CSourceCitation sc in fes.m_eventDetail.m_alSourceCitations)
+                        {
+                            sc.AddBackreference(new CBackReference(ERecordType.Family, brfr.m_xref, fes.Type));
+                            sc.AddPicFromCitationToRecord();
+                        }
+                        foreach (CNoteStructure ns in fes.m_eventDetail.m_alNoteStructures)
+                        {
+                            if (ns != null && ns.m_alSourceCitations != null)
+                            {
+
+                                foreach (CSourceCitation sc in ns.m_alSourceCitations)
+                                {
+                                    sc.AddBackreference(new CBackReference(ERecordType.Family, brfr.m_xref, fes.Type));
+                                    sc.AddPicFromCitationToRecord();
+                                }
+                            }
+                        }
+
+                    }
+                }
+                foreach (CSourceCitation sc in brfr.m_alSourceCitations)
+                {
+                    sc.AddBackreference(new CBackReference(ERecordType.Family, brfr.m_xref, ""));
+                    sc.AddPicFromCitationToRecord();
+                }
+
+            }
+            foreach (CNoteRecord brnr in m_alNoteRecords)
+            {
+                foreach (CSourceCitation sc in brnr.m_alSourceCitations)
+                {
+                    sc.AddBackreference(new CBackReference(ERecordType.Note, brnr.m_xref, ""));
+                    sc.AddPicFromCitationToRecord();
+                }
+            }
+            
+        }
 
     } // End of class CGedcom
 } // End of namespace

@@ -330,7 +330,7 @@ namespace GEDmill.LLClasses
         public override void AddPicFromCitationToRecord()
         {
             CSourceRecord sr = Gedcom.GetSourceRecord( m_xref );
-            if( sr != null )
+            if( sr != null && m_alMultimediaLinks != null)
             {
                 sr.m_alMultimediaLinks.AddRange( m_alMultimediaLinks );
                 m_alMultimediaLinks = null;
