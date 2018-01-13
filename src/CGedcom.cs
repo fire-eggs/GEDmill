@@ -235,9 +235,6 @@ namespace GEDmill
                     addMedia(gedCommon as MediaRecord);
                 }
             }
-
-            ConvertMediaLinks();
-            AddChildrenToFamilies();
         }
 
         private void ConvertMediaLinks()
@@ -275,6 +272,9 @@ namespace GEDmill
 
             LinkAdoptees();
             AddBackRefs();
+            JoinAllMmedia();
+            ConvertMediaLinks();
+            AddChildrenToFamilies();
 
             if (m_progressWindow != null)
             {
@@ -885,6 +885,21 @@ namespace GEDmill
             }
             LogFile.TheLogFile.WriteLine( LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "All done." );
 #endif
+        }
+
+        private void JoinAllMmedia()
+        {
+            // Join together fragmented multimedia files
+            LogFile.TheLogFile.WriteLine(LogFile.DT_GEDCOM, LogFile.EDebugLevel.Note, "Joining multimedia fragments.");
+            // Go through all the MFRs in every link in every record.
+            foreach (CSourceRecord isr in SourceRecords)
+            {
+                JoinMultimedia(isr.m_alMultimediaLinks);
+            }
+            foreach (CIndividualRecord iir in IndividualRecords)
+            {
+                JoinMultimedia(iir.m_alMultimediaLinks);
+            }
         }
 
         // Join together fragmented multimedia files
