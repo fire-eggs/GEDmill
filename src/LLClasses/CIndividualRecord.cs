@@ -95,13 +95,6 @@ namespace GEDmill.LLClasses
                     pns.m_sNamePersonal = nameRec.Names + " ";
                 pns.m_sNamePersonal += "/" + nameRec.Surname + "/";
 
-                // KBR TODO not yet supported by YAGP
-                //foreach (var sourceCit in nameRec.Cits)
-                //{
-                //    CSourceCitation sc = CSourceCitation.Translate(gedcom, sourceCit);
-                //    pns.m_alSourceCitations.Add(sc);
-                //}
-
                 if (nameRec.Parts.Count > 0)
                 {
                     CPersonalNamePieces pnp = new CPersonalNamePieces(gedcom);
@@ -124,6 +117,18 @@ namespace GEDmill.LLClasses
                         }
                     }
                     pns.m_personalNamePieces = pnp;
+                }
+
+                if (nameRec.Cits.Count > 0)
+                {
+                    if (pns.m_personalNamePieces == null)
+                        pns.m_personalNamePieces = new CPersonalNamePieces(gedcom);
+
+                    foreach (var sourceCit in nameRec.Cits)
+                    {
+                        CSourceCitation sc = CSourceCitation.Translate(gedcom, sourceCit);
+                        pns.m_personalNamePieces.m_alSourceCitations.Add(sc);
+                    }
                 }
 
                 ir.m_alPersonalNameStructures.Add(pns);
