@@ -5,6 +5,12 @@ So far, this has been a useful exercise, in that:
 * I have been motivated to fix several not-yet-implemented features in my library.
 * I always learn something by viewing GED processing from a different application.
 
+With casual testing on my system, SharpGedParser provides two speed improvements:
+1. Parsing the GEDCOM file goes from 15+ seconds to about 2 seconds.
+1. Generating the web site goes from 220 seconds to 200 seconds.
+
+This is with a GEDCOM file which is 11M in size; 530,000 lines long; 29,000 INDI; 9,500 FAM.
+
 Using SharpGedParser has introduced a few limitations. This version of GEDmill does not:
 1. support ANSEL characters
 1. support carriage-return (MAC) GED files
@@ -12,7 +18,7 @@ Using SharpGedParser has introduced a few limitations. This version of GEDmill d
 1. support CHAN.TIME
 1. the setting "Preserve trailing spaces in GEDCOM" no longer has any effect
 
-I have not made any changes to GEDmill functionality (except for those due to SharpGedParser).
+I have not made any changes to GEDmill functionality (except for those due to SharpGedParser). Which makes the website generation speed improvement interesting: more research is necessary.
 
 
 # GEDmill
