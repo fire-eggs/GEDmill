@@ -11,6 +11,8 @@ With casual testing on my system, SharpGedParser provides two speed improvements
 
 This is with a GEDCOM file which is 11M in size; 530,000 lines long; 29,000 INDI; 9,500 FAM.
 
+Profiling indicates that GDI+ saving the family tree images is the big performance hit when generating the website. Adding an image library for GIF/PNG output is outside the scope of this effort, so I'm wrapping up for now.
+
 Using SharpGedParser has introduced a few limitations. This version of GEDmill does not:
 1. support ANSEL characters
 1. support carriage-return (MAC) GED files
@@ -18,7 +20,7 @@ Using SharpGedParser has introduced a few limitations. This version of GEDmill d
 1. support CHAN.TIME
 1. the setting "Preserve trailing spaces in GEDCOM" no longer has any effect
 
-I have not made any changes to GEDmill functionality (except for those due to SharpGedParser). Which makes the website generation speed improvement interesting: more research is necessary.
+I have not made any changes to GEDmill functionality (except for those due to SharpGedParser).
 
 
 # GEDmill
